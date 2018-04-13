@@ -1,47 +1,23 @@
-#include "stdafx.h"
+#include "fsm/machine_set.h"
 
-#include <lutil/fsm/MachineSet.hxx>
-#include <lutil/fsm/Machine.hxx>
+#include <cassert>
+#include <typeinfo>
+#include <sstream>
+
 #include <lutil/fsm/MachineSetHandler.hxx>
 
 #include <lutil/fsm/AddMachineEvent.hxx>
 #include <lutil/fsm/TimeoutEvent.hxx>
 #include <lutil/log/LLogger.hxx>
 
-#include <boost/config.hpp>
-
-#include <exception>
-
-#include <cassert>
-#include <typeinfo>
-#include <sstream>
-
-using namespace LUtil;
-
-MachineSet::MachineSet() throw()
+namespace kuafu {
+MachineSet::MachineSet()
 :
-#ifdef _WIN32
-# if !defined(HAVE_LIBPTHREAD)
-mOwnerThreadId(::GetCurrentThreadId())
-# else
-mOwnerThreadId(::pthread_self().p)
-# endif
-#else
-mOwnerThreadId((void*)::pthread_self())
-#endif
-{
+mOwnerThreadId((void*)::pthread_self()) {
 }
 
 MachineSet::~MachineSet()
 {
-   // expunge the fifo?
-   /*
-   while (mFifo.messageAvailable())
-   {
-      process();
-      //delete mFifo.getNext();
-   }
-   */
    mFifo.clear();
 }
 
@@ -112,19 +88,6 @@ MachineSet::getMachine(const MachineType& type, const string& name)
    return 0;
 }
 
-//__declspec(deprecated("Deprecated Warning: should use enqueue(boost::shared_ptr<Event>)"))
-void
-MachineSet::enqueue(Event* event)
-{
-   enqueue(boost::shared_ptr<Event>(event));
-}
-
-void
-MachineSet::enqueue(auto_ptr<Event> event)
-{
-   enqueue(boost::shared_ptr<Event>(event.release()));
-}
-
 void
 MachineSet::enqueue(boost::shared_ptr<Event> event)
 {
@@ -132,15 +95,7 @@ MachineSet::enqueue(boost::shared_ptr<Event> event)
 
    event->mMachineSet = this;
 #ifdef ENQUEUE_DIRECT_IF_SAME_THREAD
-#ifdef _WIN32
-# if !defined(HAVE_LIBPTHREAD)
-   DWORD curThreadId = ::GetCurrentThreadId();
-# else
-   void* curThreadId = ::pthread_self().p;
-# endif
-#else
    void* curThreadId = ::pthread_self();
-#endif
 
    if (mOwnerThreadId == curThreadId)
    {
@@ -159,25 +114,11 @@ MachineSet::enqueue(boost::shared_ptr<Event> event)
 }
 
 void 
-MachineSet::enqueueDirect(Event* event)
-{
-   enqueueDirect(boost::shared_ptr<Event>(event));
-}
-
-void 
 MachineSet::enqueueDirect(boost::shared_ptr<Event> event)
 {
    EInfoLog("enqueue direct " << event->toString().c_str());
 
-#ifdef _WIN32
-# if !defined(HAVE_LIBPTHREAD)
-   DWORD curThreadId = ::GetCurrentThreadId();
-# else
-   void* curThreadId = ::pthread_self().p;
-# endif
-#else
    void* curThreadId = (void*)::pthread_self();
-#endif
 
    if (mOwnerThreadId == curThreadId)
    {
@@ -189,12 +130,6 @@ MachineSet::enqueueDirect(boost::shared_ptr<Event> event)
       EErrLog("enqueue direct " << "failed: " << "not owner thread");
       enqueue(event);
    }
-}
-
-void 
-MachineSet::enqueueDirect(auto_ptr<Event> event)
-{
-   enqueueDirect(boost::shared_ptr<Event>(event.release()));
 }
 
 bool
@@ -375,3 +310,4 @@ LUtil::operator<<(ostream& strm, const MachineSet& ms)
    }
    return strm;
 }
+} //namespace kuafu
