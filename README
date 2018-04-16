@@ -1,0 +1,5 @@
+1. build kuafu lib
+   mkdir build
+   cd build
+   cmake -DCMAKE_BUILD_TYPE=Release|Debug ../ 
+   cd lib
