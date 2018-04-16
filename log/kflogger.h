@@ -2,17 +2,19 @@
 #define KUAFU_LOGGER_H_
 
 #include <log4cplus/logger.h>
+#include <log4cplus/loggingmacros.h>
 
-#include "util/NonCopyable.h"
+#include "util/noncopyable.h"
 //------------------------------------------------
 namespace kuafu {
+
 #define TRACE_LOG(msg) LOG4CPLUS_TRACE(kuafu::Logger::instance(), msg) 
 #define INFO_LOG(msg) LOG4CPLUS_INFO(kuafu::Logger::instance(), msg) 
 #define DEBUG_LOG(msg) LOG4CPLUS_DEBUG(kuafu::Logger::instance(), msg)
 #define WARNING_LOG(msg) LOG4CPLUS_WARN(kuafu::Logger::instance(), msg) 
 #define ERR_LOG(msg) LOG4CPLUS_ERROR(kuafu::Logger::instance(), msg)
 
-class Logger {
+class Logger: public NonCopyableForAll {
  public:
      // log level according to log4cplus's loglevel
      enum class Level {
@@ -25,9 +27,10 @@ class Logger {
      };
 
  public:
-      static void Logger::init(Level level,
-         const char* pattern,
-         const char* fileName);
+     static void init(Level level,
+                 const char* pattern,
+                 const char* file_name,
+                 bool output_console);
 
       static void uninit() {
          sLogger.shutdown();
