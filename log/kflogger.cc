@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <thread>
-#include <iostream>
 
 #include <log4cplus/fileappender.h>
 #include <log4cplus/consoleappender.h>
