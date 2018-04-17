@@ -9,11 +9,11 @@ namespace kuafu {
 struct ExternalLogger {
     enum class Level {
         EL_ALL = 0,
-        EL_DEBUG_LOG = 10000,
-        EL_INFO_LOG = 20000,
-        EL_WARNING_LOG = 30000,
-        EL_ERR_LOG = 40000,
-        EL_OFF_LOG = 60000,
+        EL_DEBUG_LOG,
+        EL_INFO_LOG,
+        EL_WARNING_LOG,
+        EL_ERR_LOG,
+        EL_OFF_LOG,
     };
 
     ExternalLogger()
