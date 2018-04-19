@@ -1,6 +1,8 @@
 #ifndef KUAFU_TRANSITIONPREDICATE_H_
 #define KUAFU_TRANSITIONPREDICATE_H_
 
+#include <momery>
+
 #include "fsm/fsm_type.h"
 
 namespace kuafu {
@@ -25,8 +27,8 @@ class SimplePredicate : public IPredicate {
 
      virtual bool operator() (const EventSharedPtr&,
                  const MachineBaseSharedPtr& machine) {
-         const EventType* levent = dynamic_cast<const EventType*>(event);
-         return (levent && levent->getType() == type_);
+         auto levent = std::dynamic_pointer_cast<EventType*(event);
+         return (levent && levent->GetType() == type_);
      }
 
  private:

@@ -2,7 +2,6 @@
 
 namespace kuafu {
 
-template<class T>
 std::ostream& operator<<(std::ostream& str, const Event& event) {
    return event.ToStream(str);
 }
