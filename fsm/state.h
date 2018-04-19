@@ -1,31 +1,15 @@
-#ifndef LUTIL_STATE_HXX
-#define LUTIL_STATE_HXX
+#ifndef KUAFU_STATE_H_
+#define KUAFU_STATE_H_
 
-#include <lutil/LUtil.h>
-#include <lutil/delegate/delegate.hxx>
+namespace kuafu {
 
-#include <boost/shared_ptr.hpp>
-
-#ifdef USING_USTL
-# include <ustl.h>
-#else
-# include <vector>
-# include <string>
-# include <map>
-#endif
-
-#include <ctime>
-
-namespace LUtil
-{
-
-   class LUTIL_API Transition;
-   class LUTIL_API MachineSet;
-   class LUTIL_API MachineType;
-   class LUTIL_API MachineBase;
-   class LUTIL_API StateMachine;
-   class LUTIL_API State;
-   class LUTIL_API Event;
+   class Transition;
+   class MachineSet;
+   class MachineType;
+   class MachineBase;
+   class StateMachine;
+   class State;
+   class Event;
 
    typedef LUtil::Delegate<void (
       MachineBase&,     // machine 

@@ -19,8 +19,7 @@ static const char* [] kMachineOperatorTag = {
     "RemoveMachineEvent" //MO_REMOVE
 };
 
-template<MachineOperator mo>
-class MachineOperationEvent : public Event {
+class MachineOperationEvent : public Event<MachineOperator> {
  public:
      MachineOperationEvent(const MahcineBaseSharedPtr& machine)
          :machine_(machine) {
@@ -31,7 +30,7 @@ class MachineOperationEvent : public Event {
      MachineBase* GetMachine() const;
 
      virtual std::ostream& ToStream(std::ostream& str) const {
-         str << static_cast<const char*>(kMachineOperatorTag[mo])
+         str << static_cast<const char*>(kMachineOperatorTag[type_])
              << static_cast<const char*>("[")
              << static_cast<const char*>(" ") << machine_->GetName()
              << static_cast<const char*>("]");
@@ -40,7 +39,7 @@ class MachineOperationEvent : public Event {
 
      virtual std::string ToString() const {
          std::stringstream str;
-         str << static_cast<const char*>(kMachineOperatorTag[mo])
+         str << static_cast<const char*>(kMachineOperatorTag[type_])
              << static_cast<const char*>("[")
              << static_cast<const char*>(" ") << machine_->GetName()
              << static_cast<const char*>("]");

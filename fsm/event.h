@@ -24,14 +24,12 @@ public:
   virtual ~Event() {
   }
 
-  const MachineSet* GetMachineSet() const {
-      MachineSetSharedPtr machine_set = machine_set_.lock();
-      return machine_set.get();
+  const MachineSetSharedPtr GetMachineSet() const {
+      return machine_set_.lock();
   }
 
-  MachineSet* GetMachineSet() {
-      MachineSetSharedPtr machine_set = machine_set_.lock();
-      return machine_set.get();
+  MachineSetSharedPtr GetMachineSet() {
+      return machine_set_.lock();
   }
 
 public:
