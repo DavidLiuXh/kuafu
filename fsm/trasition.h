@@ -1,174 +1,143 @@
-#ifndef LUTIL_TRANSITION_HXX
-#define LUTIL_TRANSITION_HXX
+#ifndef KUAFU_TRANSITION_H_
+#define KUAFU_TRANSITION_H_
 
-#include <lutil/LUtil.h>
-#include <lutil/delegate/delegate.hxx>
+#include <functional>
+#include <string>
 
-#include <boost/shared_ptr.hpp>
+#include "util/noncopyable.h"
+#include "fsm/fsmtype.h"
 
-namespace LUtil
-{
+namespace kuafu {
 
-class LUTIL_API Event;
-class LUTIL_API State;
-class LUTIL_API IPredicate;
-class LUTIL_API MachineBase;
-class LUTIL_API MachineType;
-class LUTIL_API ActionMachine;
+class MachineType;
+//-------------------------------------------------------------------
+typedef std::function<void(MachineBase&,
+            State&,
+            ITransition&,
+            Event*
+            Statu&)> TransitionFireType;
 
-class LUTIL_API ITransition
-{
-public:
-   virtual ~ITransition() {}
+typedef std::funciton<void(MachineBase&, ITransition&, Event*)> ActionFireType;
+//-------------------------------------------------------------------
+class ITransition : public NonCopyableForAll {
+ public:
+     virtual ~ITransition() {}
 
-   virtual bool isMatch(const Event* event,
-      const MachineBase& machine) throw() = 0;
-
-   virtual bool isValid() const throw() = 0;
-
-   //virtual boost::shared_ptr<IPredicate> getPredicate() const = 0;
+     virtual bool IsMatch(const EventSharedPtr& event,
+                 const MachineBase& machine) = 0;
+     virtual bool IsValid() const = 0;
+     virtual const std::string& GetName() const = 0;
 };
+//-------------------------------------------------------------------
+TransitionSharedPtr MakeTransition() (const char* name,
+                const StateSharedPtr& from,
+                const StateSharedPtr& to,
+                IPredicateSharedPtr&& pred);
 
-typedef LUtil::Delegate<void (
-   MachineBase&,           // machine
-   State&,       // fromState
-   ITransition&,  // transition
-   Event*,       // event
-   State&)       // toState
-> TransitionEvent;
+TransitionSharedPtr MakeTransition(const char* name,
+            const StateShared& toFrom,
+                IPredicateSharedPtr&& pred);
+//-------------------------------------------------------------------
+class Transition : public ITransition,
+    public std::enable_shared_from_this<Transition> {
+    friend class StateMachine;
 
-class LUTIL_API Transition : public ITransition
-{
-   //DECLARE_SCRIPT_CLASS(Transition);
+ public:
+    enum class TransitionType {
+        TT_NORMAL_TRANSITION,
+        TT_INTERNAL_TRANSITION,
+    };
 
-   friend class StateMachine;
-public: // declarations
-   enum TransitionType
-   {
-      tt_NormalTransition,
-      tt_InternalTransion,
-   };
+ public:
+    virtual ~Transition();
 
-public: // constructors
-   /**
-   * Construct normal transition
-   */
-#if defined(_WIN32)
-   __declspec(deprecated("Deprecated Warning: should use boost::shared_ptr<IPredicate> instead")) 
-#endif
-   Transition(State& from,
-      const char* name, // must use global data
-      State& to,
-      IPredicate* pred) throw();
+ private:
+    Transition(const char* name,
+                const StateSharedPtr& from,
+                const StateSharedPtr& to,
+                IPredicateSharedPtr&& pred);
 
-   Transition(State& from,
-      const char* name, // must use global data
-      State& to,
-      boost::shared_ptr<IPredicate> pred) throw();
+    Transition(const char* name,
+                const StateSharedPtr& to_from,
+                IPredicateSharedPtr&& pred);
 
-   Transition(State& from, State& to, const Transition& copy) throw();
-   /**
-   * Construct internal transition
-   */
-#if defined(_WIN32)
-   __declspec(deprecated("Deprecated Warning: should use boost::shared_ptr<IPredicate> instead")) 
-#endif
-   Transition(State& toFrom,
-      const char* name, // must use global data
-      IPredicate* pred) throw();
+ public:
+    virtual bool IsValid() const { 
+        return pred_ && is_valid_;
+    }
 
-   Transition(State& toFrom,
-      const char* name,
-      boost::shared_ptr<IPredicate> pred) throw();
+    virtual bool IsMatch(const Event* event, const MachineBase& machine);
+    virtual const std::string& GetName() const {
+        return name_;
+    }
 
-   Transition(State& toFrom, const Transition& copy) throw();
-   //Transition(lua_State* L);
+ public:
 
-   virtual ~Transition();
+    TransitionType GetTransitionType() const {
+        return transition_type_;
+    }
 
-protected:
-   Transition(State& from,
-      const char* name, // must use global data
-      State& to) throw();
+    void ClearActions();
 
-public: // methods
-   //// Script Functions
-   //SCRIPT_FUNCTION(getName);
-   //SCRIPT_FUNCTION(getTransitionType);
-   // End Script Functions
-   virtual bool isValid() const throw() { return mPred && mIsValid; }
-   const char* getName() const throw() { return mName; }
-   void clearActions() throw();
-   TransitionType getTransitionType() const throw() { return mTransitionType; }
+ public:
+    TransitionFireType OnTransition;
 
-   virtual bool isMatch(const Event* event, const MachineBase& machine) throw();
-   //virtual boost::shared_ptr<IPredicate> getPredicate() const { return mPred; }
+ private:
+    void Init();
 
-public: // events
-   TransitionEvent OnTransition;
+ private:
+    TransitionType transition_type_;
+    std::string name_;
+    IPredicateSharedPtr pred_;
 
-private:
-   TransitionType mTransitionType;
-   const char* mName;
-   boost::shared_ptr<IPredicate> mPred;
-   State* mTo;
+    StateWeakPtr to_;
+    StateWeakPtr hold_from_;
+    StateWeakPtr hold_to_;
 
-   State* mHoldFrom;
-   State* mHoldTo;
-
-   bool mIsValid;
-private:  // no copying
-   Transition(const Transition&);
-   Transition& operator=(const Transition&);
-
-private: // methods
-   void init() throw();
-   void copyTransitionCheck(const Transition& copy);
+    bool is_valid_;
 };
+//-------------------------------------------------------------------
+NonTransitiveActionSharedPtr MakeNonTransitiveAction(const char* name,
+            ActionMachine& ownerMachine, 
+            IPredicateSharedPtr&& pred);
 
-typedef LUtil::Delegate<void (MachineBase&,           // machine
-                       ITransition&,  // transition
-                       Event*)       // event
-> ActionEvent;
-
-class LUTIL_API NonTransitiveAction : public ITransition
-{
+class NonTransitiveAction : public ITransition,
+    public std::enable_shared_from_this<Transition> {
    friend class ActionMachine;
-public: // constructors
-#if defined(_WIN32)
-   __declspec(deprecated("Deprecated Warning: should use boost::shared_ptr<IPredicate> instead")) 
-#endif
-   NonTransitiveAction(ActionMachine& ownerMachine, 
-      const char* name, // must use global data
-      IPredicate* pred) throw();
-   NonTransitiveAction(ActionMachine& ownerMachine, 
-      const char* name, // must use global data
-      boost::shared_ptr<IPredicate> pred) throw();
-   NonTransitiveAction(ActionMachine& ownerMachine, 
-      const NonTransitiveAction& copy) throw();
-   ~NonTransitiveAction();
 
-public: // methods
-   virtual bool isValid() const throw() { return mPred; }
-   const char* getName() const throw() { return mName; }
-   void clearActions() throw();
-   virtual bool isMatch(const Event* event, const MachineBase& machine) throw();
-   //virtual boost::shared_ptr<IPredicate> getPredicate() const { return mPred; }
+ public:
+   virtual ~NonTransitiveAction();
 
-public: // events
+ private:
+   NonTransitiveAction(const char* name,
+               ActionMachine& ownerMachine, 
+               IPredicateSharedPtr&& pred);
+
+ public:
+   virtual bool IsValid() const {
+       return pred_;
+   }
+
+   virtual bool IsMatch(const Event* event, const MachineBase& machine);
+
+   virtual const std::string& GetName() const { return name_; }
+
+   void ClearActions();
+
+ public:
    ActionEvent OnAction;
 
-private: //methods
-   void init(ActionMachine& ownerMachine) throw();
+ private:
+   void init(ActionMachine& ownerMachine);
 
-private: // members
-   const char* mName;
-   boost::shared_ptr<IPredicate> mPred;
+ private:
+   std::string name_;
+   IPredicateSharedPtr pred_;
 
-private:  // no copying
+ private:
    NonTransitiveAction& operator=(const NonTransitiveAction&);
 };
 
-} // namespace LUtil
+} // namespace kuafu
 
-#endif // #ifndef LUTIL_TRANSITION_HXX
+#endif // #ifndef KUAFU_TRANSITION_H_
