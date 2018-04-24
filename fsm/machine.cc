@@ -1,143 +1,84 @@
-#include "stdafx.h"
+#include "fsm/event.h"
+#include "fsm/macine.h"
+#include "fsm/machine_set.h"
+#include "fsm/state.h"
+#include "fsm/transition.h"
+#include "log/llogger.h"
+#include "util/timeutil.h"
 
-#include <algorithm>
-#include <cassert>
-#include <ctime>
-#include <sstream>
-
-#include <boost/config.hpp>
-
-#include <lutil/fsm/Event.hxx>
-#include <lutil/fsm/Machine.hxx>
-#include <lutil/fsm/MachineSet.hxx>
-#include <lutil/fsm/State.hxx>
-#include <lutil/fsm/Transition.hxx>
-#include <lutil/util/TimeUtil.hxx>
-#include <lutil/log/LLogger.hxx>
-
-using namespace LUtil;
+using namespace kuafu {
 
 StateMachine::StateMachine(const MachineType& type,
-                           const string& name)
-                           : MachineBase(type, name),
-                           mTimeoutMS(0),
-                           mCurrent(NULL),
-                           mPrevious(NULL),
-                           mMetaState(NULL)
-{
+                           const std::string& name)
+                           :MachineBase(type, name),
+                           timeout_ms_(0) {
 }
 
 StateMachine::StateMachine(const StateMachine& rhs)
 :MachineBase(rhs),
-mTimeoutMS(rhs.mTimeoutMS),
-mCurrent(NULL/*rhs.mCurrent*/),
-mPrevious(NULL/*rhs.mPrevious*/),
-//mStates(rhs.mStates),
-mMetaState(NULL/*rhs.mMetaState*/)
-{
+timeout_ms_(rhs.timeout_ms_), {
 }
 
-bool
-StateMachine::forceState(State& state)
-{
+bool StateMachine::ForceState(const StateSharedPtr& state) {
+    return InternalSetState<false>(state);
+}
+
+bool StateMachine::SetStartState(const State& state) {
+    return InternalSetState<false>(state);
+}
+
+template<bool IsMetaState>
+bool StateMachine::InternalSetState(const StateSharedPtr& state) {
+    bool rt = false;
+
+    auto found = std::find(states_.begin(),
+                states_.end(),
+                [](StateSharedPtr current) {
+                return state.get() == current.get();
+                });
+    if (states_.end() != found) {
+        if (IsMetaState) {
+            meta_sate_ = state;;
+        } else {
+            current_state_ = state;;
+        }
+        rt = true;
+    }
+
+    return rt;
+}
+
+bool StateMachine::SetMetaState(const StateSharedPtr& state) {
+    return InternalSetState<true>(state);
+}
+
+void StateMachine::ClearMetaState() {
+    meta_state_.reset();
+}
+
+const StateSharedPtr StateMachine::GetCurrent() const {
+   return current_state_;
+}
+
+void StateMachine::SetTimeout(unsigned long long timeout_ms) {
+      timeout_ms_ = timeout_ms != 0 ? TimeUtil::GetTimeMs() + timeoutMS : 0;
+}
+
+unsigned long long StateMachine::GetTimeout() const {
+   return timeout_ms_;
+}
+
+bool StateMachine::IsTimeout() const {
    bool rt = false;
 
-   if (mStates.end() != find(mStates.begin(), mStates.end(), &state))
-   {
-      mCurrent = &state;
-      rt = true;
-   }
-   else
-   {
-      assert(false);
+   if (timeout_ms_ != 0) {
+      rt = (TimeUtil::GetTimeMs() > timeout_ms_);
    }
 
    return rt;
 }
 
-bool
-StateMachine::setStartState(State& state)
-{
-   bool rt = false;
-
-   assert(mCurrent == 0);
-   if (find(mStates.begin(), mStates.end(), &state) != mStates.end())
-   {
-      mCurrent = &state;
-      rt = true;
-   }
-   else
-   {
-      assert(false);
-   }
-
-   return rt;
-}
-
-bool
-StateMachine::setMetaState(State& state)
-{
-   bool rt = false;
-
-   if (mStates.end() != find(mStates.begin(), mStates.end(), &state))
-   {
-      mMetaState = &state;
-      rt = true;
-   }
-   else
-   {
-      assert(false);
-   }
-
-   return rt;
-}
-
-void
-StateMachine::clearMetaState()
-{
-   mMetaState = 0;
-}
-
-const State*
-StateMachine::getCurrent() const
-{
-   return mCurrent;
-}
-
-void
-StateMachine::setTimeout(unsigned long long timeoutMS)
-{
-   if (timeoutMS != 0)
-   {
-      mTimeoutMS = TimeUtil::getTimeMs() + timeoutMS;
-   }
-   else if (mTimeoutMS)
-   {
-      mTimeoutMS = 0;
-   }
-}
-
-unsigned long long
-StateMachine::getTimeout() const
-{
-   return mTimeoutMS;
-}
-
-bool
-StateMachine::isTimeout() const
-{
-   bool rt = false;
-
-   if (mTimeoutMS != 0)
-   {
-      rt = (TimeUtil::getTimeMs() > mTimeoutMS);
-   }
-
-   return rt;
-}
-
-bool
-StateMachine::processNormalStateTransition(Event* event)
+bool StateMachine::ProcessNormalStateTransition(Event* event)
 {
    if (mCurrent)
    {
@@ -161,9 +102,6 @@ StateMachine::processNormalStateTransition(Event* event)
                catch (...)
                {
                   EErrLog("Caught exception at Exit action: (" << mType.getName().c_str() << " " << mName.c_str() << ") " << mCurrent->getName());
-#ifndef BOOST_NO_EXCEPTIONS
-                  throw;
-#endif
                }
             }
 
@@ -462,3 +400,4 @@ ActionMachine::process(Event* event)
    return false;
 }
 
+}//namespace kuafu
