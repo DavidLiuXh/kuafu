@@ -8,7 +8,7 @@
 
 namespace kuafu {
 
-TransitionSharedPtr MakeTransition() (const char* name,
+TransitionSharedPtr Transition::MakeTransition() (const char* name,
                 const StateSharedPtr& from,
                 const StateSharedPtr& to,
                 IPredicateSharedPtr&& pred) {
@@ -22,7 +22,7 @@ TransitionSharedPtr MakeTransition() (const char* name,
     }
 }
 
-TransitionSharedPtr MakeTransition(const char* name,
+TransitionSharedPtr Transition::MakeTransition(const char* name,
             const StateShared& toFrom,
                 IPredicateSharedPtr&& pred) {
     TransitionSharedPtr transition = std::make_shared<Transition>(
@@ -89,9 +89,8 @@ bool Transition::IsMatch(const Event* event,
 void Transition::ClearActions() {
     OnTransition = nullptr;
 }
-
 //-------------------------------------------------------------------
-NonTransitiveActionSharedPtr MakeNonTransitiveAction(const char* name,
+NonTransitiveActionSharedPtr NonTransitiveAction::MakeNonTransitiveAction(const char* name,
             ActionMachine& ownerMachine, 
             IPredicateSharedPtr&& pred) {
     NonTransitiveActionSharedPtr non_transition = std::make_shared<NonTransitiveAction>(

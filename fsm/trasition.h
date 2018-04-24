@@ -29,15 +29,6 @@ class ITransition : public NonCopyableForAll {
      virtual const std::string& GetName() const = 0;
 };
 //-------------------------------------------------------------------
-TransitionSharedPtr MakeTransition() (const char* name,
-                const StateSharedPtr& from,
-                const StateSharedPtr& to,
-                IPredicateSharedPtr&& pred);
-
-TransitionSharedPtr MakeTransition(const char* name,
-            const StateShared& toFrom,
-                IPredicateSharedPtr&& pred);
-//-------------------------------------------------------------------
 class Transition : public ITransition,
     public std::enable_shared_from_this<Transition> {
     friend class StateMachine;
@@ -47,6 +38,16 @@ class Transition : public ITransition,
         TT_NORMAL_TRANSITION,
         TT_INTERNAL_TRANSITION,
     };
+
+ public:
+    static TransitionSharedPtr MakeTransition() (const char* name,
+                const StateSharedPtr& from,
+                const StateSharedPtr& to,
+                IPredicateSharedPtr&& pred);
+
+    static TransitionSharedPtr MakeTransition(const char* name,
+                const StateShared& toFrom,
+                IPredicateSharedPtr&& pred);
 
  public:
     virtual ~Transition();
@@ -97,13 +98,14 @@ class Transition : public ITransition,
     bool is_valid_;
 };
 //-------------------------------------------------------------------
-NonTransitiveActionSharedPtr MakeNonTransitiveAction(const char* name,
-            ActionMachine& ownerMachine, 
-            IPredicateSharedPtr&& pred);
-
 class NonTransitiveAction : public ITransition,
     public std::enable_shared_from_this<Transition> {
    friend class ActionMachine;
+
+ public:
+   static NonTransitiveActionSharedPtr MakeNonTransitiveAction(const char* name,
+               ActionMachine& ownerMachine, 
+               IPredicateSharedPtr&& pred);
 
  public:
    virtual ~NonTransitiveAction();
