@@ -1,58 +1,51 @@
-#include "stdafx.h"
+#include "fsm/state.h"
 
-#include <lutil/fsm/State.hxx>
-#include <lutil/fsm/Machine.hxx>
+#include "util/strutil/h"
 
-#include <cassert>
+namespace kuafu {
 
-using namespace LUtil;
+StateSharedPtr MakeState(StateMachine& owner, const char* name, time_t time_ms = 0) {
+    StateSharedPtr state = std::make_shared<State>(owner, name, time_ms);
+    if (state) {
+        owner.mStates.push_back(shared_from_this());
+    }
+}
 
-State::State(StateMachine& owner, const char* name, time_t timeoutMS)
-:mName(name)
-,mTimeoutMS(timeoutMS)
-{
+StateSharedPtr MakeState(StateMachine& owner, const State& copy) {
+    StateSharedPtr state = std::make_shared<State>(owner, copy);
+    if (state) {
+        owner.mStates.push_back(shared_from_this());
+    }
+}
+
+State::State(StateMachine& owner, const char* name, time_t timeout_ms)
+:name_(StrUtil::SafeGetString(name))
+,timeout_ms_(timeout_ms) {
    owner.mStates.push_back(this);
 }
 
 State::State(StateMachine& owner, const State& copy)
-:mName(copy.mName)
-,mTimeoutMS(copy.mTimeoutMS)
-{
+:name_(copy.name_)
+,timeout_ms_(copy.timeout_ms_) {
    owner.mStates.push_back(this);
 }
 
 //virtual 
-State::~State()
-{
+State::~State() {
 }
 
-void
-State::clearActions()
-{
+void State::ClearActions() {
    OnEnter.Clear();
    OnExit.Clear();
 }
 
-time_t
-State::getTimeout() const
-{
-   return mTimeoutMS;
-}
 
-void
-State::setTimeout(time_t newTimeoutMS)
-{
-   mTimeoutMS = newTimeoutMS;
-}
-
-bool 
-State::operator==(const State& rhs) const
-{
+bool State::operator==(const State& rhs) const {
    return this == &rhs;
 }
 
-bool 
-State::operator!=(const State& rhs) const
-{
+bool State::operator!=(const State& rhs) const {
    return this != &rhs;
 }
+
+} //namespace kuafu

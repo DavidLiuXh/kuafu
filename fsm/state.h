@@ -1,56 +1,62 @@
 #ifndef KUAFU_STATE_H_
 #define KUAFU_STATE_H_
 
-namespace kuafu {
+#include <function>
+#include <memory>
 
-   class Transition;
-   class MachineSet;
-   class MachineType;
-   class MachineBase;
-   class StateMachine;
-   class State;
-   class Event;
+#include "fsm/fsmtype.h"
 
-   typedef LUtil::Delegate<void (
-      MachineBase&,     // machine 
-      State&)       // state
-   > StateEvent;
+namespace kuafu : public std::enable_shared_from_this<Transition> {
 
+typedef std::function<void(MachineBase&, State&)> StateEvent;
 
-   class LUTIL_API State
-   {
-   public: // ctor/dtor
-      State(StateMachine& owner, const char* name, time_t timerMS = 0);
-      State(StateMachine& owner, const State& copy);
-      virtual ~State();
+class State {
+ public:
+     StateSharedPtr MakeState(StateMachine& owner, const char* name, time_t timerMS = 0);
+     StateSharedPtr MakeState(StateMachine& owner, const State& copy);
 
-   public: // methods
-      const char* getName() const { return mName; }
-      void clearActions();
-      time_t getTimeout() const;
-      void setTimeout(time_t newTimeoutMS);
+ public:
+     virtual ~State();
 
-      bool operator==(const State& rhs) const;
-      bool operator!=(const State& rhs) const;
+ private:
+     State(StateMachine& owner, const char* name, time_t timerMS = 0);
+     State(StateMachine& owner, const State& copy);
 
-   public: // events
-      StateEvent OnEnter;
-      StateEvent OnExit;
+ public:
+     const std::string& GetName() const {
+         return name_;
+     }
 
-   private: // methods
+     time_t GetTimeout() const {
+         return timeout_ms_;
+     }
 
-   private: // members
-      friend class LUTIL_API StateMachine;
-      friend class LUTIL_API Transition;
+     void SetTimeout(time_t new_timeout_ms) {
+         timeout_ms_ = new_timeout_ms;
+     }
 
-      const char* mName;
-      time_t mTimeoutMS;
+     void ClearActions();
 
-      vector<Transition*> mTransitions;
-   private:
-      State& operator=(const State&);
-   };
+     bool operator==(const State& rhs) const;
+     bool operator!=(const State& rhs) const;
 
-} // namespace LUtil
+ public:
+     StateEvent OnEnter;
+     StateEvent OnExit;
 
-#endif // #ifndef LUTIL_STATE_HXX
+ private:
+     friend class StateMachine;
+     friend class Transition;
+
+     std::string name_;
+     time_t timeout_ms_;
+
+     std::vector<TransitionSharedPtr> transitions_;
+
+ private:
+     State& operator=(const State&);
+};
+
+} // namespace kuafu
+
+#endif // #ifndef KUAFU_STATE_H_
