@@ -80,8 +80,8 @@ protected:
    StateMachine& operator=(const StateMachine& rhs);
 
  private:
-   bool ProcessNormalStateTransition(Event* event);
-   bool ProcessMetaStateTransition(Event* event);
+   bool ProcessNormalStateTransition(EventSharedPtr event);
+   bool ProcessMetaStateTransition(EventSharedPtr event);
 
    template<bool IsMetaState>
    bool InternalSetState(const StateSharedPtr& state);

@@ -8,7 +8,7 @@
 
 namespace kuafu : public std::enable_shared_from_this<Transition> {
 
-typedef std::function<void(MachineBase&, State&)> StateEvent;
+typedef std::function<void(MachineBase&, const StateSharedPtr&)> StateEvent;
 
 class State {
  public:

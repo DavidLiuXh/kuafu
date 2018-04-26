@@ -11,14 +11,6 @@ namespace kuafu {
 
 class MachineType;
 //-------------------------------------------------------------------
-typedef std::function<void(MachineBase&,
-            State&,
-            ITransition&,
-            Event*
-            Statu&)> TransitionFireType;
-
-typedef std::funciton<void(MachineBase&, ITransition&, Event*)> ActionFireType;
-//-------------------------------------------------------------------
 class ITransition : public NonCopyableForAll {
  public:
      virtual ~ITransition() {}
@@ -28,6 +20,16 @@ class ITransition : public NonCopyableForAll {
      virtual bool IsValid() const = 0;
      virtual const std::string& GetName() const = 0;
 };
+
+typedef std::shared_ptr<ITransition> ITransitionSharedPtr;
+
+typedef std::function<void(MachineBase&,
+            const StateSharedPtr&,
+            ITransitionSharedPtr&,
+            EventSharedPtr,
+            const StateSharedPtr&)> TransitionFireType;
+ 
+typedef std::funciton<void(MachineBase&, ITransitionSharedPtr&, EventSharedPtr)> ActionFireType;
 //-------------------------------------------------------------------
 class Transition : public ITransition,
     public std::enable_shared_from_this<Transition> {
@@ -67,7 +69,7 @@ class Transition : public ITransition,
         return pred_ && is_valid_;
     }
 
-    virtual bool IsMatch(const Event* event, const MachineBase& machine);
+    virtual bool IsMatch(const EventSharedPtr& event, const MachineBase& machine);
     virtual const std::string& GetName() const {
         return name_;
     }
@@ -127,7 +129,7 @@ class NonTransitiveAction : public ITransition,
    void ClearActions();
 
  public:
-   ActionEvent OnAction;
+   ActionFireType OnAction;
 
  private:
    void init(ActionMachine& ownerMachine);

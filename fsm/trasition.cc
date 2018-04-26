@@ -123,12 +123,13 @@ void NonTransitiveAction::Init(ActionMachine& ownerMachine) {
    }
 }
 
-bool NonTransitiveAction::IsMatch(const Event* event,
+bool NonTransitiveAction::IsMatch(const EventSharedPtr& event,
                              const MachineBase& machine) {
     bool rt = false;
 
-    if (mPred)
+    if (mPred) {
       rt = (*mPred)(event, machine);
+    }
 
     return rt;
 }
