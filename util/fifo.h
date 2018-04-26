@@ -1,27 +1,26 @@
-#ifndef LUTIL_FIFO_HXX
-#define LUTIL_FIFO_HXX
+#ifndef KUAFU_FIFO_H_
+#define KUAFU_FIFO_H_
 
-#include <cassert>
-#include <boost/shared_ptr.hpp>
+#include <memory>
+#include <deque>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 
-#ifdef USING_USTL
-# include <ustl.h>
-#else
-# include <deque>
-#endif
-#include <lutil/util/AbstractFifo.hxx>
+#include "util/noncopyable.h"
 
-namespace LUtil
-{
-template < class Msg >
-class Fifo : public AbstractFifo
-{
-   public:
+namespace kuafu {
+
+template <class Msg>
+class Fifo : public NonCopyableForAll {
+ public:
+     typedef typename std::shared_ptr<Msg> FifoElementType;
+
+ public:
       Fifo();
-      virtual ~Fifo();
+      ~Fifo();
       
-      // Add a message to the fifo.
-      void add(boost::shared_ptr<Msg> msg);
+      void Add(FifoElementType msg);
 
       /** Returns the first message available. It will wait if no
        *  messages are available. If a signal interrupts the wait,
@@ -29,8 +28,7 @@ class Fifo : public AbstractFifo
        *  via getNext. If you need to detect a signal, use block
        *  prior to calling getNext.
        */
-      boost::shared_ptr<Msg> getNext();
-
+      FifoElementType GetNext();
 
       /** Returns the next message available. Will wait up to
        *  ms milliseconds if no information is available. If
@@ -39,127 +37,109 @@ class Fifo : public AbstractFifo
        *  no mechanism to distinguish between timeout and
        *  interrupt.
        */
-      boost::shared_ptr<Msg> getNext(int ms);
+      FifoElementType GetNext(unsigned int ms);
 
       /** Returns the next message available and the queue status.
        *  Will not wait if no information is available.
        */
-      //boost::shared_ptr<Msg> getNext(bool& hasNext);
 
-      /// delete all elements in the queue
-      virtual void clear();
+      // delete all elements in the queue
+      void Clear();
 
-      /// Returns true if a message is available.
-      virtual bool messageAvailable() const;
+      // Returns true if a message is available.
+      bool MessageAvailable() const;
 
-   protected:
-      typedef std::deque<boost::shared_ptr<Msg> > FifoQueueType;
-      FifoQueueType mFifo;
+      bool Empty() const;
+
+      unsigned int Size() const;
 
    private:
-      Fifo(const Fifo& rhs);
-      Fifo& operator=(const Fifo& rhs);
+      typedef std::deque<FifoElementType> FifoQueueType;
+      FifoQueueType fifo_;
+
+      unsigned long size_;
+
+      mutable std::mutex mutex_;
+      std::condition_variable condition_;
 };
 
-
 template <class Msg>
-Fifo<Msg>::Fifo() : 
-   AbstractFifo(0)
-{}
-
-template <class Msg>
-Fifo<Msg>::~Fifo()
-{
-   clear();
+Fifo<Msg>::Fifo() {
 }
 
 template <class Msg>
-void
-Fifo<Msg>::clear()
-{
-   boost::mutex::scoped_lock lock(mMutex);
-   FifoQueueType().swap(mFifo);
-   assert(mFifo.empty());
-   mSize = 0;
+Fifo<Msg>::~Fifo() {
+   Clear();
 }
 
 template <class Msg>
-void
-Fifo<Msg>::add(boost::shared_ptr<Msg> msg)
-{
-   boost::mutex::scoped_lock lock(mMutex);
-   mFifo.push_back(msg);
-   ++mSize;
-   mCondition.notify_one();
+bool Fifo<Msg>::Empty() const {
+    std::lock_guard<std::mutex> lock(mutex_); 
+    return size_ == 0;
 }
 
 template <class Msg>
-boost::shared_ptr<Msg>
-Fifo<Msg>::getNext()
-{
-   boost::mutex::scoped_lock lock(mMutex);
-
-   // Wait util there are messages available.
-   while (mFifo.empty())
-   {
-      mCondition.wait(lock);
-   }
-
-   // Return the first message on the fifo.
-   //
-   boost::shared_ptr<Msg> firstMessage = mFifo.front();
-   mFifo.pop_front();
-   assert(mSize != 0);
-   --mSize;
-   return firstMessage;
+unsigned int Fifo<Msg>::Size() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return size_;
 }
 
 template <class Msg>
-boost::shared_ptr<Msg>
-Fifo<Msg>::getNext(int ms)
-{
-#if 0
-   const unsigned long long begin(TimeUtil::getTimeMs());
-   const unsigned long long end(begin + (unsigned int)(ms)); // !kh! the parameter ms should've been unsigned :(
-
-   Lock lock(mMutex); 
-
-   // Wait until there are messages available
-   while (mFifo.empty())
-   {
-      const long long interval = end - TimeUtil::getTimeMs();
-      if(interval <= 0)
-      {
-         return 0;
-      }
-      bool signaled = mCondition.wait(mMutex, (unsigned int)interval);
-      if (!signaled)
-      {
-         return 0;
-      }
-   }
-
-   // Return the first message on the fifo.
-   //
-   boost::shared_ptr<Msg> firstMessage = mFifo.front();
-   mFifo.pop_front();
-   assert(mSize != 0);
-   --mSize;
-#else
-  boost::shared_ptr<Msg> firstMessage;
-#endif
-   return firstMessage;
+void Fifo<Msg>::Clear() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    FifoQueueType().swap(fifo_);
+    size_ = 0;
+    condition_.notify_one();
 }
 
 template <class Msg>
-bool
-Fifo<Msg>::messageAvailable() const
-{
-   boost::mutex::scoped_lock lock(mMutex); 
-   return !mFifo.empty();
+void Fifo<Msg>::Add(FifoElementType msg) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    fifo_.push_back(msg);
+    ++size_;
+    condition_.notify_one();
 }
 
+template <class Msg>
+typename Fifo<Msg>::FifoElementType Fifo<Msg>::GetNext() {
+   std::unique_lock<std::mutex> lk(mutex_);
 
-} // namespace LUtil
+   condition_.wait(lk, [this]() {
+               return !fifo_.empty();
+               });
 
-#endif // #ifndef LUTIL_FIFO_HXX
+   FifoElementType first_message = fifo_.front();
+   fifo_.pop_front();
+   --size_;
+
+   return first_message;
+}
+
+template <class Msg>
+typename Fifo<Msg>::FifoElementType Fifo<Msg>::GetNext(unsigned int internal_ms) {
+    FifoElementType first_message;
+
+    auto now = std::chrono::system_clock::now();
+
+    std::unique_lock<std::mutex> lk(mutex_);
+    bool signaled = condition_.wait_until(lk, now + internal_ms * std::chrono::milliseconds(1), [this]() {
+                return !fifo_.empty();
+                });
+    if (signaled) {
+        first_message = fifo_.front();
+        fifo_.pop_front();
+        --size_;
+    }
+
+    return first_message;
+}
+
+template <class Msg>
+bool Fifo<Msg>::MessageAvailable() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return !fifo_.empty();
+}
+
+} // namespace kuafu 
+
+#endif // #ifndef KUAFU_FIFO_H_
