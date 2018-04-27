@@ -4,64 +4,70 @@
 #include <vector>
 #include <set>
 #include <memory>
+#include <thread>
 
-#include "lutil/util/Fifo.hxx"
-#include "lutil/log/externallogger.hxx"
+#include "util/fifo.h"
+#include "log/externallogger.h"
+#include "fsm/fsmtype.h"
 
-namespace kuafu 
-{
+namespace kuafu {
 class MachineSetHandler;
 class MachineBase;
 class MachineType;
 class Event;
 
-class MachineSet : public ExternalLogger {
-   public:
-      MachineSet();
-      ~MachineSet();
+class MachineSet : public ExternalLogger
+    public std::enable_shared_from_this<MachineSet> {
+ public:
+     static MachineSetSharedPtr MakeMachineSet();
 
-   public:
-      void registerHandler(std::shared_ptr<LUtil::MachineSetHandler> handler);
+ private:
+     MachineSet();
+
+ public:
+     ~MachineSet();
+
+ public:
+      void RegisterHandler(MachineSetHandlerSharedPtr handler);
+
       // thread safe
-      void enqueue(boost::shared_ptr<Event> event);
+      void Enqueue(EventSharedPtr event);
 
-      void enqueueDirect(boost::shared_ptr<Event> event);
-
-      bool hasEvents() const;
-
-      void process();      
-      void process(boost::shared_ptr<Event> event);      
-      void processTimeoutMachine(const MachineBase* machine);
+      void Process(); 
+      void Process(EventSharedPtr event);
+      void ProcessTimeoutMachine(MachineBaseSharedPtr machine);
       
-      // thread safe now!
-      void addMachine(MachineBase* machine);
-      void removeMachine(MachineBase* machine);
-      MachineBase* getMachine(const MachineType& type, const string& name);
-      void updateTimeoutMahcine(const MachineBase* machine, time_t timeout) ;
+      MachineBaseSharedPtr GetMachine(const MachineType& type, const string& name);
+      void UpdateTimeoutMahcine(MachineBaseSharedPtr machine, time_t timeout) ;
 
-      bool hasHandler() const { return mEventHandler != NULL; }
+      bool HasHandler() const { return mEventHandler; }
 
-   public: // events
+   public:
       NotifyEvent OnProcessError;
 
-   private: // methods
-      bool processTargetMachineEvent(boost::shared_ptr<Event>& delEvent);
-      bool processNoTargetMachineEvent(boost::shared_ptr<Event>& delEvent);
+   private:
+      void AddMachine(MachineBaseSharedPtr machine);
+      void RemoveMachine(MachineBaseSharedPtr machine);
+
+      bool ProcessTargetMachineEvent(const EventSharedPtr& event);
+      bool ProcessNoTargetMachineEvent(const EventSharedPtr& event);
 
    private:
-      typedef std::vector<LUtil::MachineBase*> MachinePtrList;
-      MachinePtrList mMachines;
-      typedef std::set<LUtil::MachineBase*> MachinePtrSet;
-      MachinePtrSet mMachinesSet;
-      Fifo<LUtil::Event> mFifo;
-      boost::shared_ptr<LUtil::MachineSetHandler> mEventHandler;
+      typedef std::vector<MachineBaseSharedPtr> MachinePtrList;
+      typedef std::set<MachineBaseSharedPtr> MachinePtrSet;
 
-      void* mOwnerThreadId;
+      MachinePtrList machine_list_;
+      MachinePtrSet machine_set_;
 
-      friend ostream& operator<<(ostream& strm, const MachineSet& ms);
+      Fifo<Event> event_fifo_;
+
+      MachineSetHandlerSharedPtr event_handler_;
+
+      std::thread::id owner_thread_id_;
 };
 
 ostream& operator<<(ostream& strm, const MachineSet& ms);
+
 }  // namespace kuafu
 
 #endif // #ifndef KUAFU_MACHINESET_H_

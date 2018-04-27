@@ -51,10 +51,10 @@ class MachineBase : public ExternalLogger {
 
 class StateMachine : public MachineBase {
    friend class State;
-
- public:
+ private:
    StateMachine(const MachineType& type,
                const std::string& name);
+ public:
    virtual ~StateMachine(){}
 
  public:

@@ -4,287 +4,182 @@
 #include <typeinfo>
 #include <sstream>
 
-#include <lutil/fsm/MachineSetHandler.hxx>
+#include "fsm/machineset_handler.h"
 
-#include <lutil/fsm/AddMachineEvent.hxx>
-#include <lutil/fsm/TimeoutEvent.hxx>
-#include <lutil/log/LLogger.hxx>
+#include "fsm/add_machine_event.h"
+#include "fsm/timeout_event.h"
+#include "log/llOgger.h"
 
 namespace kuafu {
+
+MachineSetSharedPtr MachineSet::MakeMachineSet() {
+    return std::make_shared<MachineSet>();
+}
+
 MachineSet::MachineSet()
-:
-mOwnerThreadId((void*)::pthread_self()) {
+:owner_thread_id_(std::this_thread::get_id()) {
 }
 
-MachineSet::~MachineSet()
-{
-   mFifo.clear();
+MachineSet::~MachineSet() {
+   event_fifo_.Clear();
 }
 
-void MachineSet::registerHandler(boost::shared_ptr<LUtil::MachineSetHandler> handler)
-{
-   assert(!(mEventHandler && handler) && "Are you forget reset mEventHandler ?");
-   mEventHandler = handler;
+void MachineSet::RegisterHandler(MachineSetHandlerSharedPtr handler) {
+   event_handler_ = handler;
 }
 
-void
-MachineSet::addMachine(MachineBase* machine)
-{
-   EDebugLog("Adding machine: " << machine->getName().c_str() << "(" << machine->getType().getName().c_str() << ")");
-   assert(!getMachine(machine->getType(), machine->getName()));
+void MachineSet::AddMachine(MachineBaseSharedPtr machine) {
+   EDebugLog("Adding machine: " << machine->GetName()
+               << "(" << machine->GetType().GetName() << ")");
 
-#ifdef USING_USTL
-   if (mMachinesSet.insert(machine) != mMachinesSet.end())
-#else
-   if (mMachinesSet.insert(machine).second)
-#endif
-   {
-      mMachines.push_back(machine);
-      machine->EnableLogDelegate = EnableLogDelegate;
-      machine->CritLogDelegate = CritLogDelegate;
-      machine->ErrLogDelegate = ErrLogDelegate;
-      machine->WarningLogDelegate = WarningLogDelegate;
-      machine->InfoLogDelegate = InfoLogDelegate;
-      machine->DebugLogDelegate = DebugLogDelegate;
+   if (machine_set_.insert(machine).second) {
+      machine_list_.push_back(machine);
+
+      machine->debuglog_delegate = debuglog_delegate;
+      machine->infolog_delegate = infolog_delegate;
+      machine->warninglog_delegate = warninglog_delegate;
+      machine->errlog_delegate = errlog_delegate;
    }
 }
 
-void
-MachineSet::removeMachine(MachineBase* machine)
-{
-   EDebugLog("Removing machine: " << machine->getName().c_str() << "(" << machine->getType().getName().c_str() << ")");
+void MachineSet::RemoveMachine(MachineBaseSharedPtr machine) {
+   EDebugLog("Removing machine: " << machine->GetName()
+               << "(" << machine->GetType().GetName() << ")");
 
-#ifdef USING_USTL
-   if (mMachinesSet.insert(machine) != mMachinesSet.end())
-#else
-   if (mMachinesSet.erase(machine))
-#endif
-   {
-      for (MachinePtrList::iterator i = mMachines.begin();
-         i != mMachines.end(); ++i)
-      {
-         if ((*i) == machine)
-         {
-            mMachines.erase(i);
-            return;
-         }
-      }
-   }
-   //assert(false);
-}
-
-MachineBase*
-MachineSet::getMachine(const MachineType& type, const string& name)
-{
-   for (MachinePtrList::const_iterator i = mMachines.begin();
-      i != mMachines.end(); ++i)
-   {
-      if ((*i)->getType() == type &&
-         (*i)->getName() == name)
-      {
-         return *i;
-      }
-   }
-   return 0;
-}
-
-void
-MachineSet::enqueue(boost::shared_ptr<Event> event)
-{
-   EInfoLog("enqueue " << event->toString().c_str());
-
-   event->mMachineSet = this;
-#ifdef ENQUEUE_DIRECT_IF_SAME_THREAD
-   void* curThreadId = ::pthread_self();
-
-   if (mOwnerThreadId == curThreadId)
-   {
-      process(event);
-   }
-   else
-#endif
-   {
-      if (mEventHandler && mEventHandler->onEventEnqueue(event) == MachineSetHandler::MS_Skip)
-      {
-         // skip
-         return ;
-      }
-      mFifo.add(event);
-   }
-}
-
-void 
-MachineSet::enqueueDirect(boost::shared_ptr<Event> event)
-{
-   EInfoLog("enqueue direct " << event->toString().c_str());
-
-   void* curThreadId = (void*)::pthread_self();
-
-   if (mOwnerThreadId == curThreadId)
-   {
-      event->mMachineSet = this;
-      process(event);
-   }
-   else
-   {
-      EErrLog("enqueue direct " << "failed: " << "not owner thread");
-      enqueue(event);
-   }
-}
-
-bool
-MachineSet::hasEvents() const
-{
-   if (mEventHandler)
-   {
-      return mFifo.messageAvailable();
-   }
-   else
-   {
-      if (mFifo.messageAvailable())
-      {
-         return true;
-      }
-
-      // check each machine for timeout !dlb! lame scaling!
-      for (MachinePtrList::const_iterator i = mMachines.begin();
-         i != mMachines.end(); ++i)
-      {
-         if ((*i)->getTimeout() != 0)
-         {
-            return true;
-         }
-      }
-
-      return false;
-   }
-}
-
-void
-MachineSet::process()
-{
-   while (mFifo.messageAvailable())
-   {
-      process(mFifo.getNext());
-   }
-
-   // check each machine for timeout !dlb! lame scaling!
-   if (!mEventHandler)
-   {
-      for (MachinePtrList::iterator i = mMachines.begin();
-         i != mMachines.end(); ++i)
-      {
-         if ((*i)->isTimeout())
-         {
-            TimeoutEvent timeout(this, (*i)->getType(), (*i)->getName());
-            (*i)->setTimeout((time_t)0);
-            (*i)->process(&timeout);
+   if (machine_set_.erase(machine)) {
+      for (auto i = machine_list_.begin();
+         i != machine_list_.end(); ++i) {
+         if (i->get() == machine.get()) {
+             machine_list_.erase(i);
+             EDebugLog("Removing machine: " << machine->GetName() << " OK!");
+             return;
          }
       }
    }
 }
 
-bool MachineSet::processTargetMachineEvent(boost::shared_ptr<Event>& delEvent)
-{
+MachineBaseSharedPtr MachineSet::GetMachine(const MachineType& type, const string& name) {
+    MachineBaseSharedPtr found = nullptr;
+
+    for (auto i = machine_list_.begin(), e = machine_list_.end();
+                i != e; ++i) {
+        if ((*i)->GetType() == type &&
+                    (*i)->GetName() == name) {
+            found = *i;
+            break;
+        }
+    }
+
+    return found;
+}
+
+void MachineSet::Enqueue(EventSharedPtr event) {
+   EInfoLog("enqueue " << event->toString());
+
+   event->machine_set_ = std::shared_from_this();
+   if (event_handler_ &&
+               event_handler->onEventEnqueue(event) == MachineSetHandler::HandleResult::MS_SKIP) {
+       EDebugLog("use machine set handler");
+   } else {
+       event_fifo_.Add(event);
+   }
+}
+
+void MachineSet::Process() {
+   while (event_fifo_.MessageAvailable()) {
+      Process(event_fifo_.GetNext());
+   }
+
+   if (!event_handler_) {
+      for (auto i = machine_list_.begin(), e = machine_list_.end();
+         i != e; ++i) {
+         if ((*i)->IsTimeout()) {
+            (*i)->SetTimeout(0);
+            std::shared_ptr<TimeoutEvent> timeout_event(std::shared_from_this(),
+                        (*i)->GetType(),
+                        (*i)->GetName());
+            (*i)->Process(timeout_event);
+         }
+      }
+   }
+}
+
+bool MachineSet::ProcessTargetMachineEvent(const EventSharedPtr& event) {
    bool handled = false;
-   for (Event::MachinePtrList::iterator i = delEvent->mTargetMachines.begin();
-      i != delEvent->mTargetMachines.end(); ++i)
-   {
-      MachinePtrSet::iterator found = mMachinesSet.find(*i);
-      if (found != mMachinesSet.end())
-      {
-         assert(*found);
-         handled |= (*found)->process(delEvent.get());
+
+   for (auto i = event->target_machines_.begin(), e = event->target_machines_.end();
+      i != event->target_machines_.end(); ++i) {
+      auto found = machine_set_.find(*i);
+      if (found != machine_set_.end()) {
+         handled |= found->Process(event);
       }
    }
+
    return handled;
 }
 
-bool MachineSet::processNoTargetMachineEvent(boost::shared_ptr<Event>& delEvent)
-{
+bool MachineSet::ProcessNoTargetMachineEvent(const EventSharedPtr& event) {
    bool handled = false;
-   // !NASH! reverse machines traverse
-   for (MachinePtrList::reverse_iterator i = mMachines.rbegin();
-      i != mMachines.rend(); ++i)
-   {
-      assert(*i);
-      handled |= (*i)->process(delEvent.get());
+
+   for (auto i = machine_list_.rbegin(), e = machine_list_.rend();
+      i != e; ++i) {
+      handled |= (*i)->Process(event);
    }
+
    return handled;
 }
 
-void MachineSet::process(boost::shared_ptr<Event> event)
-{
-   _TRY_BEGIN
-      boost::shared_ptr<AddMachineEvent> addMachineEvent(event, boost::detail::dynamic_cast_tag());
-      if (addMachineEvent)
-      {
-         addMachine(addMachineEvent->getMachine());
-         return;
-      }
-      else
-      {
-         boost::shared_ptr<RemoveMachineEvent> removeMachineEvent(event, boost::detail::dynamic_cast_tag());
-         if (removeMachineEvent)
-         {
-            removeMachine(removeMachineEvent->getMachine());
+void MachineSet::Process(EventSharedPtr event) {
+    try {
+        auto add_machine_event = std::dynamic_pointer_cast<AddMachineEvent>(event);
+        if (add_machine_evnet) {
+            AddMachine(add_machine_event->GetMachine());
             return;
-         }
-      }
-      
-      EInfoLog("Handling event: " << event->toString().c_str());
-      bool handled = false;
-      {
-         if (event->mTargetMachines.size())
-         {
-            handled = processTargetMachineEvent(event);
-         }
-         else
-         {
-            handled = processNoTargetMachineEvent(event);
-         }
-      }
+        } else {
+            auto remove_machine_event = std::dynamic_pointer_cast<RemoveMachineEvent>(event);
+            if (remove_machine_event) {
+                RemoveMachine(remove_machine_event->GetMachine());
+                return;
+            }
+        }
 
-      if (!handled)
-      {
-         EErrLog("Unhandled event: " << event->toString().c_str());
-      }
-   _CATCH (exception& e)
-#if _HAS_EXCEPTIONS
-      EErrLog(__FUNCTION__ << " | caught exception: " << e.what());
-      OnProcessError();
-#endif
-   _CATCH_ALL
-#if _HAS_EXCEPTIONS
-      EErrLog(__FUNCTION__ << " | caught unknown exception");
-      OnProcessError();
-#endif
-   _CATCH_END
+        EInfoLog("Handling event: " << event->toString());
+
+        bool handled = false;
+
+        if (!event->target_machines_.empty()) {
+            handled = ProcessTargetMachineEvent(event);
+        } else {
+            handled = ProcessNoTargetMachineEvent(event);
+        }
+
+        if (!handled) {
+            EErrLog("Unhandled event: " << event->toString().c_str());
+        }
+    } catch (exception& e) {
+        EErrLog(__FUNCTION__ << " | caught exception: " << e.what());
+        OnProcessError();
+    } catch (...) {
+        EErrLog(__FUNCTION__ << " | caught unknown exception");
+        OnProcessError();
+    }
 }
 
-void MachineSet::processTimeoutMachine(const MachineBase* machine)
-{
-   MachinePtrSet::iterator found = mMachinesSet.find(const_cast<MachineBase*>(machine));
-   if (found != mMachinesSet.end())
-   {
-      StateMachine* stateMachine = dynamic_cast<StateMachine*>(*found);
-      if (stateMachine)
-      {
-         TimeoutEvent timeout(this, stateMachine->getType(), stateMachine->getName());
-         stateMachine->setTimeout((time_t)0);
-         try
-         {
-            stateMachine->process(&timeout);
-         }
-#ifndef BOOST_NO_EXCEPTIONS
-         catch (exception& e)
-         {
+void MachineSet::ProcessTimeoutMachine(MachineBaseSharedPtr machine) {
+   auto found = machine_set_.find(machine);
+   if (found != machine_set_.end()) {
+      auto state_machine = std::dynamic_pointer_cast<StateMachine>(*found);
+      if (state_machine) {
+          std::shared_ptr<TimeoutEvent> timeout_event(std::shared_from_this(),
+                      state_machine->GetType(),
+                      state_machine->GetName());
+         state_machine->SetTimeout(0);
+         try {
+            state_machine->Process(timeout_event);
+         } catch (exception& e) {
             EErrLog(__FUNCTION__ << " | caught exception: " << e.what());
             OnProcessError();
-         }
-#endif
-         catch (...)
-         {
+         } catch (...) {
             EErrLog(__FUNCTION__ << " | caught unknown exception");
             OnProcessError();
          }
@@ -292,22 +187,22 @@ void MachineSet::processTimeoutMachine(const MachineBase* machine)
    }
 }
 
-void MachineSet::updateTimeoutMahcine(const MachineBase* machine, time_t msSeconds)
-{
-   if (mEventHandler && msSeconds != 0)
-   {
-      mEventHandler->onUpdateMachineTimeOut(this, machine, msSeconds);
+void MachineSet::UpdateTimeoutMahcine(MachineBaseSharedPtr machine, time_t seconds_ms) {
+   if (event_handler_ && seconds_ms > 0) {
+      event_handler_->OnUpdateMachineTimeOut(this, machine, seconds_ms);
    }
 }
 
-ostream& 
-LUtil::operator<<(ostream& strm, const MachineSet& ms) 
-{
+std::ostream& operator<<(std::ostream& strm, const MachineSet& ms) {
    strm << static_cast<const char*>("Machines: ");
-   for (MachineSet::MachinePtrList::const_iterator i = ms.mMachines.begin(); i != ms.mMachines.end(); ++i)
-   {
-      strm << (*i)->getName() << static_cast<const char*>("(") << (*i)->getType().getName() << static_cast<const char*>("),");
+   for (auto i = ms.machine_list_.begin(), e = ms.machine_list_.end();
+               i != e; ++i) {
+      strm << (*i)->GetName()
+          << static_cast<const char*>("(")
+          << (*i)->getType().getName()
+          << static_cast<const char*>("),");
    }
+
    return strm;
 }
 } //namespace kuafu

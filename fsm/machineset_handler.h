@@ -28,8 +28,8 @@ class MachineSetHandler {
                  const MachineBaseSharedPtr& machine);
 
  public:
-     virtual int onEventEnqueue(const EventSharedPtr& event) = 0 ;
-     virtual int onUpdateMachineTimeOut(const MachineSetSharedPtr& machine_set,
+     virtual int OnEventEnqueue(const EventSharedPtr& event) = 0 ;
+     virtual int OnUpdateMachineTimeOut(const MachineSetSharedPtr& machine_set,
                  const MachineBaseSharedPtr& machine
                  time_t seconds) = 0;
 };
@@ -39,7 +39,7 @@ class IMachineSetExternalHandler {
      virtual ~IMachineSetExternalHandler() {
      }
 
-     virtual void registerHandler(const MachineSetHandlerSharedPtr& handler) = 0;
+     virtual void RegisterHandler(const MachineSetHandlerSharedPtr& handler) = 0;
 };
 
 } // namespace kuafu

@@ -88,7 +88,7 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
          StateSharedPtr to_status = transition->to_.lock();
 
          if (transition->IsMatch(event, *this)) {
-            EInfoLog("Event (match) type: " << event->toString().c_str()
+            ExternalInfoLog("Event (match) type: " << event->toString().c_str()
                         << ", Type: " << type_.getName().c_str()
                         << ", Name: " << name_.c_str());
 
@@ -98,28 +98,28 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
                     << " " << name_.c_str() << ") "
                     << current_state_->GetName();
 
-               EDebugLog("Entering " << ss.str();
+               ExternalDebugLog("Entering " << ss.str();
                try {
                   current_state_->OnExit(*this, current_state_);
-                  EDebugLog("Exited " << ss.str();
+                  ExternalDebugLog("Exited " << ss.str();
                } catch (...) {
-                  EErrLog("Caught exception " << ss.str();
+                  ExternalErrorLog("Caught exception " << ss.str();
                }
 
                ss.str("");
 
-               EInfoLog("Normal Transition from: " << current_state_->GetName()
+               ExternalInfoLog("Normal Transition from: " << current_state_->GetName()
                   << " -> " << to_status ? to_status->GetName() : "non_status"
                   << ", for Machine"
                   << " (" << type_.GetName().c_str() << " " << name_.c_str() << ") ");
-               EDebugLog("Transition: ["
+               ExternalDebugLog("Transition: ["
                   << transition->GetName()
                   << "]");
             } else {
-               EInfoLog("Internal Transition for state: " << current_state_->GetName()
+               ExternalInfoLog("Internal Transition for state: " << current_state_->GetName()
                   << ", for Machine"
                   << " (" << type_.GetName().c_str() << " " << name_.c_str() << ") ");
-               EDebugLog("Transition: ["
+               ExternalDebugLog("Transition: ["
                   << transition->GetName()
                   << "]");
             }
@@ -131,14 +131,14 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
                   event,
                   to_status);
                if (transition->GetTransitionType() == Transition::TT_NORMAL_TRANSITION) {
-                  EDebugLog("Exited Normal Transition: ["
+                  ExternalDebugLog("Exited Normal Transition: ["
                      << transition->GetName()
                      << "] from: " << current_state_->GetName()
                      << " -> " << to_status ? to_status->GetName() : "non_status"
                      << ", for Machine"
                      << " (" << type_.GetName().c_str() << " " << name_.c_str() << ") ");
                } else {
-                  EDebugLog("Exited Internal Transition: ["
+                  ExternalDebugLog("Exited Internal Transition: ["
                      << transition->GetName()
                      << "] for state: " << current_state_->GetName()
                      << ", for Machine"
@@ -146,14 +146,14 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
                }
             } catch (...) {
                if (transition->GetTransitionType() == Transition::TT_NORMAL_TRANSITION) {
-                  EErrLog("Caught exception at Normal Transition action: ["
+                  ExternalErrorLog("Caught exception at Normal Transition action: ["
                      << transition->GetName()
                      << "] from: " << current_state_->GetName()
                      << " -> " << to_status ? to_status->GetName() : "non_status"
                      << ", for Machine"
                      << " (" << type_.GetName().c_str() << " " << name_.c_str() << ") ");
                } else {
-                  EErrLog("Caught exception at Internal Transition action: ["
+                  ExternalErrorLog("Caught exception at Internal Transition action: ["
                      << transition->GetName()
                      << "] for state: " << current_state_->GetName()
                      << ", for Machine"
@@ -171,17 +171,17 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
                   SetTimeout(current_state_->GetTimeout());
                }
 
-               EDebugLog("Entering Enter action: (" << type_.GetName().c_str()
+               ExternalDebugLog("Entering Enter action: (" << type_.GetName().c_str()
                            << " " << name_.c_str()
                            << ") " << transition->to_->GetName());
 
                try {
                   current_state_->OnEnter(*this, current_state_);
-                  EDebugLog("Exited Enter action: (" << type_.GetName().c_str()
+                  ExternalDebugLog("Exited Enter action: (" << type_.GetName().c_str()
                               << " " << name_.c_str() << ") "
                               << to_status ? to_status->GetName() : "non_status");
                } catch (...) {
-                  EErrLog("Caught exception at Enter action: (" << type_.GetName().c_str() << " "
+                  ExternalErrorLog("Caught exception at Enter action: (" << type_.GetName().c_str() << " "
                               << name_.c_str() << ") " << current_state_->GetName());
                }
             }
@@ -209,19 +209,19 @@ bool StateMachine::processMetaStateTransition(EventSharedPtr event) {
                     << " " << name_.c_str() << ") "
                     << current_state_->GetName();
 
-               EDebugLog("Entering Meta " << ss.str();
+               ExternalDebugLog("Entering Meta " << ss.str();
                try {
                   current_state_->OnExit(*this, *mCurrent);
-                  EDebugLog("Exited Meta " << ss.str();
+                  ExternalDebugLog("Exited Meta " << ss.str();
                } catch (...) {
-                  EErrLog("Caught exception " << ss.str();
+                  ExternalErrorLog("Caught exception " << ss.str();
                }
             }
 
-            EInfoLog( "Meta Transition from: Empty -> " << to_status ? to_status->GetName() : "non-status"
+            ExternalInfoLog( "Meta Transition from: Empty -> " << to_status ? to_status->GetName() : "non-status"
                << ", for Machine"
                << " (" << type_.GetName().c_str() << " " << name_.c_str() << ") ");
-            EDebugLog( "Meta Transition: [" << transition->GetName()
+            ExternalDebugLog( "Meta Transition: [" << transition->GetName()
                << "]");
 
             try {
@@ -231,12 +231,12 @@ bool StateMachine::processMetaStateTransition(EventSharedPtr event) {
                   transition,
                   event,
                   to_status);
-               EDebugLog( "Exited Meta Transition: [" << transition->getName()
+               ExternalDebugLog( "Exited Meta Transition: [" << transition->getName()
                   << "] from: Empty -> " << to_status ? to_status->GetName() : "non-status"
                   << ", for Machine"
                   << " (" << tyupe_.GetName().c_str() << " " << name_.c_str() << ") ");
             } catch (...) {
-               EErrLog( "Caught exception at Meta Transition action: [" << transition->GetName()
+               ExternalErrorLog( "Caught exception at Meta Transition action: [" << transition->GetName()
                   << "] from: Empty -> " << to_status ? to_status->GetName() : "non-status"
                   << ", for Machine"
                   << " (" << type_.GetName().c_str() << " " << name_.c_str() << ") ");
@@ -254,16 +254,16 @@ bool StateMachine::processMetaStateTransition(EventSharedPtr event) {
                   SetTimeout(to_status->GetTimeout());
                }
 
-               EDebugLog("Entering Meta Enter action: (" << type_.GetName() << " "
+               ExternalDebugLog("Entering Meta Enter action: (" << type_.GetName() << " "
                            << name_ << ") "
                            << current_state_->GetName());
                try {
                   current_state_->OnEnter(*this, current_state_));
-                  EDebugLog("Exited Meta Enter action: (" << tyhpe_.GetName().c_str() << " "
+                  ExternalDebugLog("Exited Meta Enter action: (" << tyhpe_.GetName().c_str() << " "
                               << name_.c_str() << ") "
                               << current_state_->GetName());
                } catch (...) {
-                  EErrLog("Caught exception at Meta Enter action: (" << type_.GetName().c_str() << " "
+                  ExternalErrorLog("Caught exception at Meta Enter action: (" << type_.GetName().c_str() << " "
                               << name_.c_str() << ") "
                               << current_state_->GetName());
                }
@@ -277,7 +277,7 @@ bool StateMachine::processMetaStateTransition(EventSharedPtr event) {
 }
 
 bool ActionMachine::process(EventSharedPtr event) {
-   EDebugLog("Process ActionMachine name: " << GetName().c_str() << "| Machine type:"
+   ExternalDebugLog("Process ActionMachine name: " << GetName().c_str() << "| Machine type:"
       <<  GetType().GetName().c_str());
 
    for(auto i = non_transitive_actions_.begin();
@@ -285,7 +285,7 @@ bool ActionMachine::process(EventSharedPtr event) {
       NonTransitiveActionSharedPtr non_transitive_transition = *i;
 
       if (non_transitive_transition->IsMatch(event, *this)) {
-         EInfoLog("Non-transitive action: " << non_transitive_transition->GetName()
+         ExternalInfoLog("Non-transitive action: " << non_transitive_transition->GetName()
             << " for "
             << " (" << type_.GetName() << " " << name_ << ") ");
 
@@ -293,11 +293,11 @@ bool ActionMachine::process(EventSharedPtr event) {
             non_transitive_transition->OnAction(*this,
                non_transitive_transition,
                event);
-            EDebugLog("Exited Non-transitive action: " << nonTransitiveTransition->getName()
+            ExternalDebugLog("Exited Non-transitive action: " << nonTransitiveTransition->getName()
                << " for "
                << " (" << type_.GetName().c_str() << " " << name_ << ") ");
          } catch (...) {
-            EErrLog("Caught exception at Non-transitive action: " << non_transitive_transition->GetName()
+            ExternalErrorLog("Caught exception at Non-transitive action: " << non_transitive_transition->GetName()
                << " for (" << type_.GetName().c_str() << " " << name_.c_str() << ") ");
          }
 

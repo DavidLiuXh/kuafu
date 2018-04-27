@@ -27,7 +27,9 @@ class MachineOperationEvent : public Event<MachineOperator> {
      ~MachineOperationEvent() {
      }
 
-     MachineBase* GetMachine() const;
+     MachineBaseSharedPtr GetMachine() const {
+         return machine_;
+     }
 
      virtual std::ostream& ToStream(std::ostream& str) const {
          str << static_cast<const char*>(kMachineOperatorTag[type_])
@@ -47,7 +49,7 @@ class MachineOperationEvent : public Event<MachineOperator> {
      }
 
  private:
-     MachineBaseWeakPtr machine_;
+     MachineBaseSharedPtr machine_;
 };
 
 } // namespace kuafu
