@@ -1,7 +1,7 @@
 #include "fsm/timeout_predicate.h"
 
 #include "fsm/timeout_event.h"
-#include <lutil/fsm/Machine.hxx>
+#include "fsm/machine.h"
 
 namespace kuafu {
 
@@ -14,7 +14,8 @@ bool TimeoutPredicate::operator() (const EventSharedPtr& event,
    auto tevent = std::dynamic_pointer_cast<TimeoutEvent>(event);
    return (tevent &&
                source_machine_type_ == tevent->GetType() &&
-               machine.getName() == tevent->GetMachineName());
+               machine &&
+               machine->GetName() == tevent->GetMachineName());
 }
 
 } //namespace kuafu

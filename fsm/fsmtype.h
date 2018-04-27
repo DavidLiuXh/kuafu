@@ -27,7 +27,7 @@ typedef std::shared_ptr<MachineSetHandler> MachineSetHandlerSharedPtr;
 
 typedef std::shared_ptr<Event> EventSharedPtr;
 
-typedef std::shared_ptr<IPredicate> IpredicateSharedPtr;
+typedef std::shared_ptr<IPredicate> IPredicateSharedPtr;
 
 typedef std::shared_ptr<State> StateSharedPtr;
 typedef std::weak_ptr<State> StateWeakPtr;

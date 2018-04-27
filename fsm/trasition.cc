@@ -1,4 +1,4 @@
-#include "fsm/transition.h"
+#include "fsm/trasition.h"
 
 #include "util/strutil.h"
 
@@ -8,36 +8,40 @@
 
 namespace kuafu {
 
-TransitionSharedPtr Transition::MakeTransition() (const char* name,
+TransitionSharedPtr Transition::MakeTransition(const char* name,
                 const StateSharedPtr& from,
                 const StateSharedPtr& to,
-                IPredicateSharedPtr&& pred) {
-    TransitionSharedPtr transition = std::make_shared<Transition>(
+                IPredicateSharedPtr pred) {
+    TransitionSharedPtr transition(new Transition(
                 name,
                 from,
                 to,
-                pred);
+                pred));
     if (transition) {
         transition->Init();
     }
+
+    return transition;
 }
 
 TransitionSharedPtr Transition::MakeTransition(const char* name,
-            const StateShared& toFrom,
-                IPredicateSharedPtr&& pred) {
-    TransitionSharedPtr transition = std::make_shared<Transition>(
+            const StateSharedPtr& from,
+                IPredicateSharedPtr pred) {
+    TransitionSharedPtr transition(new Transition(
                 name,
                 from,
-                pred);
+                pred));
     if (transition) {
         transition->Init();
     }
+
+    return transition;
 }
 //-------------------------------------------------------------------
 Transition::Transition(const char* name,
             const StateSharedPtr& from,
             const StateSharedPtr& to,
-            IPredicateSharedPtr&& pred)
+            IPredicateSharedPtr pred)
 :transition_type_(TransitionType::TT_NORMAL_TRANSITION)
 ,name_(StrUtil::SafeGetString(name))
 ,pred_(pred)
@@ -47,13 +51,14 @@ Transition::Transition(const char* name,
 ,is_valid_(true) {
 }
 
-Transition::Transition(const char* name,const StateSharedPtr& to_from,
-                       IPredicateSharedPtr&& pred)
-:transition_type_(TT_INTERNAL_TRANSION)
+Transition::Transition(const char* name,
+            const StateSharedPtr& to_from,
+                       IPredicateSharedPtr pred)
+:transition_type_(TransitionType::TT_INTERNAL_TRANSITION)
 ,name_(StrUtil::SafeGetString(name))
 ,pred_(pred)
-,hold_from_(&to_from)
-,hold_to_(&to_from)
+,hold_from_(to_from)
+,hold_to_(to_from)
 ,is_valid_(true) {
 }
 
@@ -63,24 +68,23 @@ Transition::~Transition() {
 void Transition::Init() {
     StateSharedPtr hold_from_state = hold_from_.lock(); 
     if (hold_from_state) {
-        TransitionSharedPtr transitions = hold_from_state->transitions_;
-        if (Transitions &&
-                    std::find(hold_from_state->begin(),
-                        hold_from_state->end(),
-                        [this](TransitionSharedPtr& t) {
-                        return t.get() == this;
-                        })) {
-            hold_from_state->transitions_.push_back(shared_from_this());
+        auto transitions = hold_from_state->transitions_;
+        TransitionSharedPtr t = shared_from_this();
+        if (transitions &&
+                    transitions.end() == std::find(transitions.begin(),
+                        transitions.end(),
+                        t)) {
+            transitions.push_back(shared_from_this());
             to_ = hold_to_;
         }
     }
 }
 
-bool Transition::IsMatch(const Event* event,
+bool Transition::IsMatch(const EventSharedPtr& event,
                     const MachineBase& machine) {
     bool rt = false;
-    if (mPred) {
-        rt = (*mPred)(event, machine);
+    if (pred_) {
+        rt = (*pred_)(event, machine);
     }
 
     return rt;
@@ -92,8 +96,8 @@ void Transition::ClearActions() {
 //-------------------------------------------------------------------
 NonTransitiveActionSharedPtr NonTransitiveAction::MakeNonTransitiveAction(const char* name,
             ActionMachine& ownerMachine, 
-            IPredicateSharedPtr&& pred) {
-    NonTransitiveActionSharedPtr non_transition = std::make_shared<NonTransitiveAction>(
+            IPredicateSharedPtr pred) {
+    NonTransitiveActionSharedPtr non_transition(new NonTransitiveAction>(
                 name,
                 ownerMachine,
                 pred);
@@ -113,13 +117,11 @@ NonTransitiveAction::~NonTransitiveAction() {
 }
 
 void NonTransitiveAction::Init(ActionMachine& ownerMachine) {
-   auto found = std::find(ownerMachine.mNonTransitiveActions.begin(),
-               ownerMachine.mNonTransitiveActions.end(),
-               [this](NonTransitionSharedPtr& non_transition) {
-               return non_transition.get() == this;
-               });
-   if (found == ownerMachine.mNonTransitiveActions.end()) {
-      ownerMachine.mNonTransitiveActions.push_back(shared_from_this());
+   auto found = std::find(ownerMachine.non_transitive_actions_.begin(),
+               ownerMachine.non_transitive_actions_.end(),
+               shared_from_this());
+   if (found == ownerMachine.non_transitive_actions_.end()) {
+      ownerMachine.non_transitive_actions_.push_back(shared_from_this());
    }
 }
 
@@ -127,8 +129,8 @@ bool NonTransitiveAction::IsMatch(const EventSharedPtr& event,
                              const MachineBase& machine) {
     bool rt = false;
 
-    if (mPred) {
-      rt = (*mPred)(event, machine);
+    if (pred_) {
+      rt = (*pred_)(event, machine);
     }
 
     return rt;

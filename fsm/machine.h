@@ -35,7 +35,7 @@ class MachineBase : public ExternalLogger {
        return type_;
    }
 
-   const string& GetName() const {
+   const std::string& GetName() const {
        return name_; 
    }
 
@@ -50,6 +50,7 @@ class MachineBase : public ExternalLogger {
 
 
 class StateMachine : public MachineBase {
+ public:
    friend class State;
  private:
    StateMachine(const MachineType& type,
@@ -73,7 +74,7 @@ class StateMachine : public MachineBase {
    virtual bool IsTimeout() const;
    virtual bool Process(EventSharedPtr);
 
-protected:
+ protected:
    StateMachine(const StateMachine& rhs);
 
  private:
@@ -107,10 +108,10 @@ class ActionMachine : public MachineBase {
    }
 
  public:
-   virtual bool process(Event*);
+   virtual bool Process(Event*);
 
  protected:
-   typedef vector<NonTransitiveActionSharedPtr> ActionListType;
+   typedef std::vector<NonTransitiveActionSharedPtr> ActionListType;
    ActionListType non_transitive_actions_;
 };
 

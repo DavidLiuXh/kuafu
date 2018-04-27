@@ -34,6 +34,17 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 #============================= sources ========================================================
 SET(PROJECT_ALL_FILES
     ./log/kflogger.cc
+    ./util/strutil.cc
+    ./util/timeutil.cc
+    ./fsm/event.cc
+    ./fsm/timeout_event.cc
+    ./fsm/timeout_predicate.cc
+    ./fsm/state.cc
+    ./fsm/trasition.cc
+    ./fsm/machineset_handler.cc
+    ./fsm/machine_type.cc
+    ./fsm/machine.cc
+    ./fsm/machine_set.cc
     )
 
 INCLUDE_DIRECTORIES(

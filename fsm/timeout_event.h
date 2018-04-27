@@ -12,7 +12,10 @@ namespace kuafu {
 class  MachineSet;
 class  MachineType;
 
-class TimeoutEvent : public Event {
+enum class TimeoutEventType {
+};
+
+class TimeoutEvent : public EventTemplate<TimeoutEventType> {
  public:
      TimeoutEvent(const MachineSetSharedPtr& machine_set,
                  const MachineType& machine_type,

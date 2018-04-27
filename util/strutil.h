@@ -3,11 +3,11 @@
 
 #include <string>
 
-#include "util/noncoopyable.h"
+#include "util/noncopyable.h"
 //------------------------------------------------------
 namespace kuafu {
 
-class StrUtil {
+class StrUtil : public NonCopyableForAll {
 
  public:
      template<typename StringPtrType>

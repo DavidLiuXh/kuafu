@@ -1,19 +1,21 @@
 #ifndef KUAFU_STATE_H_
 #define KUAFU_STATE_H_
 
-#include <function>
+#include <functional>
 #include <memory>
 
 #include "fsm/fsmtype.h"
 
-namespace kuafu : public std::enable_shared_from_this<Transition> {
+namespace kuafu {
+
+class StateMachine;
 
 typedef std::function<void(MachineBase&, const StateSharedPtr&)> StateEvent;
 
-class State {
+class State : public std::enable_shared_from_this<State>  {
  public:
-     StateSharedPtr MakeState(StateMachine& owner, const char* name, time_t timerMS = 0);
-     StateSharedPtr MakeState(StateMachine& owner, const State& copy);
+     static StateSharedPtr MakeState(StateMachine& owner, const char* name, time_t timerMS = 0);
+     static StateSharedPtr MakeState(StateMachine& owner, const State& copy);
 
  public:
      virtual ~State();

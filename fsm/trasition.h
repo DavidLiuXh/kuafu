@@ -29,7 +29,7 @@ typedef std::function<void(MachineBase&,
             EventSharedPtr,
             const StateSharedPtr&)> TransitionFireType;
  
-typedef std::funciton<void(MachineBase&, ITransitionSharedPtr&, EventSharedPtr)> ActionFireType;
+typedef std::function<void(MachineBase&, ITransitionSharedPtr&, EventSharedPtr)> ActionFireType;
 //-------------------------------------------------------------------
 class Transition : public ITransition,
     public std::enable_shared_from_this<Transition> {
@@ -42,14 +42,14 @@ class Transition : public ITransition,
     };
 
  public:
-    static TransitionSharedPtr MakeTransition() (const char* name,
+    static TransitionSharedPtr MakeTransition(const char* name,
                 const StateSharedPtr& from,
                 const StateSharedPtr& to,
-                IPredicateSharedPtr&& pred);
+                IPredicateSharedPtr pred);
 
     static TransitionSharedPtr MakeTransition(const char* name,
-                const StateShared& toFrom,
-                IPredicateSharedPtr&& pred);
+                const StateSharedPtr& toFrom,
+                IPredicateSharedPtr pred);
 
  public:
     virtual ~Transition();
@@ -58,11 +58,11 @@ class Transition : public ITransition,
     Transition(const char* name,
                 const StateSharedPtr& from,
                 const StateSharedPtr& to,
-                IPredicateSharedPtr&& pred);
+                IPredicateSharedPtr pred);
 
     Transition(const char* name,
                 const StateSharedPtr& to_from,
-                IPredicateSharedPtr&& pred);
+                IPredicateSharedPtr pred);
 
  public:
     virtual bool IsValid() const { 
@@ -107,7 +107,7 @@ class NonTransitiveAction : public ITransition,
  public:
    static NonTransitiveActionSharedPtr MakeNonTransitiveAction(const char* name,
                ActionMachine& ownerMachine, 
-               IPredicateSharedPtr&& pred);
+               IPredicateSharedPtr pred);
 
  public:
    virtual ~NonTransitiveAction();
@@ -119,10 +119,10 @@ class NonTransitiveAction : public ITransition,
 
  public:
    virtual bool IsValid() const {
-       return pred_;
+       return static_cast<bool>(pred_);
    }
 
-   virtual bool IsMatch(const Event* event, const MachineBase& machine);
+   virtual bool IsMatch(const EventSharedPtr& event, const MachineBase& machine);
 
    virtual const std::string& GetName() const { return name_; }
 
