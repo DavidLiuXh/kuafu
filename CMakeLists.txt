@@ -40,7 +40,7 @@ SET(PROJECT_ALL_FILES
     ./fsm/timeout_event.cc
     ./fsm/timeout_predicate.cc
     ./fsm/state.cc
-    ./fsm/trasition.cc
+    ./fsm/transition.cc
     ./fsm/machineset_handler.cc
     ./fsm/machine_type.cc
     ./fsm/machine.cc

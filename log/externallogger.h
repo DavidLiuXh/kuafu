@@ -35,8 +35,9 @@ struct ExternalLogger {
     do { \
         if (Level::EL_INFO_LOG >= level && infolog_delegate) { \
             std::ostringstream os; \
-            os << __FILE__ << " | " << __LINE__ << " | " \
-            << __FUNCTION__ << " | " << msg; \
+            {\
+            os << __FILE__ << " | " << __LINE__ << " | " << __FUNCTION__ << " | " << msg; \
+            }\
             infolog_delegate(std::move(os)); \
             os.str(""); \
         } \
@@ -46,8 +47,9 @@ struct ExternalLogger {
     do { \
         if (Level::EL_DEBUG_LOG >= level && debuglog_delegate) { \
             std::ostringstream os; \
-            os << __FILE__ << " | " << __LINE__ << " | " \
-            << __FUNCTION__ << " | " << msg; \
+            {\
+            os << __FILE__ << " | " << __LINE__ << " | " << __FUNCTION__ << " | " << msg; \
+            }\
             debuglog_delegate(std::move(os)); \
             os.str(""); \
         } \
@@ -56,8 +58,9 @@ struct ExternalLogger {
     do { \
         if (Level::EL_WARNING_LOG >= level && warninglog_delegate) { \
             std::ostringstream os; \
-            os << __FILE__ << " | " << __LINE__ << " | " \
-            << __FUNCTION__ << " | " << msg; \
+            {\
+            os << __FILE__ << " | " << __LINE__ << " | " << __FUNCTION__ << " | " << msg; \
+            }\
             warninglog_delegate(std::move(os)); \
             os.str(""); \
         } \
@@ -66,8 +69,9 @@ struct ExternalLogger {
     do { \
         if (Level::EL_ERR_LOG >= level && errlog_delegate) { \
             std::ostringstream os; \
-            os << __FILE__ << " | " << __LINE__ << " | " \
-            << __FUNCTION__ << " | " << msg; \
+            {\
+            os << __FILE__ << " | " << __LINE__ << " | " << __FUNCTION__ << " | " << msg; \
+            }\
             errlog_delegate(std::move(os)); \
             os.str(""); \
         } \

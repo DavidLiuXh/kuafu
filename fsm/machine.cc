@@ -1,12 +1,12 @@
+#include "fsm/machine.h"
+
 #include "fsm/event.h"
-#include "fsm/macine.h"
-#include "fsm/machine_set.h"
 #include "fsm/state.h"
+#include "fsm/machine_set.h"
 #include "fsm/transition.h"
-#include "log/llogger.h"
 #include "util/timeutil.h"
 
-using namespace kuafu {
+namespace kuafu {
 
 StateMachine::StateMachine(const MachineType& type,
                            const std::string& name)
@@ -16,14 +16,14 @@ StateMachine::StateMachine(const MachineType& type,
 
 StateMachine::StateMachine(const StateMachine& rhs)
 :MachineBase(rhs),
-timeout_ms_(rhs.timeout_ms_), {
+timeout_ms_(rhs.timeout_ms_) {
 }
 
 bool StateMachine::ForceState(const StateSharedPtr& state) {
     return InternalSetState<false>(state);
 }
 
-bool StateMachine::SetStartState(const State& state) {
+bool StateMachine::SetStartState(const StateSharedPtr& state) {
     return InternalSetState<false>(state);
 }
 
@@ -33,12 +33,10 @@ bool StateMachine::InternalSetState(const StateSharedPtr& state) {
 
     auto found = std::find(states_.begin(),
                 states_.end(),
-                [](StateSharedPtr current) {
-                return state.get() == current.get();
-                });
+                state);
     if (states_.end() != found) {
         if (IsMetaState) {
-            meta_sate_ = state;;
+            meta_state_ = state;;
         } else {
             current_state_ = state;;
         }
@@ -61,7 +59,7 @@ const StateSharedPtr StateMachine::GetCurrent() const {
 }
 
 void StateMachine::SetTimeout(unsigned long long timeout_ms) {
-      timeout_ms_ = timeout_ms != 0 ? TimeUtil::GetTimeMs() + timeoutMS : 0;
+      timeout_ms_ = timeout_ms != 0 ? TimeUtil::GetTimeMs() + timeout_ms : 0;
 }
 
 unsigned long long StateMachine::GetTimeout() const {
@@ -82,26 +80,26 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
    if (current_state_) {
       TransitionSharedPtr transition = nullptr;
 
-      for (auto i = current_state_->.begin();
+      for (auto i = current_state_->begin();
          i != current_state_->transitions_.end(); ++i) {
          transition = *i;
          StateSharedPtr to_status = transition->to_.lock();
 
          if (transition->IsMatch(event, *this)) {
-            ExternalInfoLog("Event (match) type: " << event->toString().c_str()
-                        << ", Type: " << type_.getName().c_str()
-                        << ", Name: " << name_.c_str());
+            ExternalInfoLog("Event (match) type: " << event->ToString()
+                        << ", Type: " << type_.GetName()
+                        << ", Name: " << name_);
 
-            if (transition->GetTransitionType() == Transition::TrasitionType::TT_NORMAL_TRANSITION) {
+            if (transition->GetTransitionType() == Transition::TransitionType::TT_NORMAL_TRANSITION) {
                 std::stringstream ss;
-                ss << "at Exit action: (" << type_.getName().c_str()
-                    << " " << name_.c_str() << ") "
+                ss << "at Exit action: (" << type_.GetName()
+                    << " " << name_ << ") "
                     << current_state_->GetName();
 
-               ExternalDebugLog("Entering " << ss.str();
+               ExternalDebugLog("Entering " << ss.str());
                try {
                   current_state_->OnExit(*this, current_state_);
-                  ExternalDebugLog("Exited " << ss.str();
+                  ExternalDebugLog("Exited " << ss.str());
                } catch (...) {
                   ExternalErrorLog("Caught exception " << ss.str();
                }
@@ -110,8 +108,8 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
 
                ExternalInfoLog("Normal Transition from: " << current_state_->GetName()
                   << " -> " << to_status ? to_status->GetName() : "non_status"
-                  << ", for Machine"
-                  << " (" << type_.GetName().c_str() << " " << name_.c_str() << ") ");
+                  << ", for Machine ("
+                  << type_.GetName() << " " << name_ << ") ");
                ExternalDebugLog("Transition: ["
                   << transition->GetName()
                   << "]");
@@ -130,7 +128,7 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
                   transition,
                   event,
                   to_status);
-               if (transition->GetTransitionType() == Transition::TT_NORMAL_TRANSITION) {
+               if (transition->GetTransitionType() == Transition::TransitionType::TT_NORMAL_TRANSITION) {
                   ExternalDebugLog("Exited Normal Transition: ["
                      << transition->GetName()
                      << "] from: " << current_state_->GetName()
@@ -209,12 +207,12 @@ bool StateMachine::processMetaStateTransition(EventSharedPtr event) {
                     << " " << name_.c_str() << ") "
                     << current_state_->GetName();
 
-               ExternalDebugLog("Entering Meta " << ss.str();
+               ExternalDebugLog("Entering Meta " << ss.str());
                try {
                   current_state_->OnExit(*this, *mCurrent);
-                  ExternalDebugLog("Exited Meta " << ss.str();
+                  ExternalDebugLog("Exited Meta " << ss.str());
                } catch (...) {
-                  ExternalErrorLog("Caught exception " << ss.str();
+                  ExternalErrorLog("Caught exception " << ss.str());
                }
             }
 

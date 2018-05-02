@@ -23,14 +23,14 @@ class MachineSetHandler {
      virtual ~MachineSetHandler() {
      }
 
-     void processEvent(const EventSharedPtr& event);
-     void processTimeOutMachine(const MachineSetSharedPtr& machine_set,
+     void ProcessEvent(const EventSharedPtr& event);
+     void ProcessTimeOutMachine(const MachineSetSharedPtr& machine_set,
                  const MachineBaseSharedPtr& machine);
 
  public:
      virtual int OnEventEnqueue(const EventSharedPtr& event) = 0 ;
      virtual int OnUpdateMachineTimeOut(const MachineSetSharedPtr& machine_set,
-                 const MachineBaseSharedPtr& machine
+                 const MachineBaseSharedPtr& machine,
                  time_t seconds) = 0;
 };
 

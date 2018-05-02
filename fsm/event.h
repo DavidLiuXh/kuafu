@@ -20,6 +20,9 @@ class Event {
  public:
   virtual std::ostream& ToStream(std::ostream& str) const = 0;
   virtual std::string ToString() const = 0;
+  virtual const MachineSetSharedPtr GetMachineSet() const {
+      return nullptr;
+  }
 };
 
 template<class EventType,

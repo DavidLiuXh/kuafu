@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <string>
+#include <memory>
 
 #include "util/noncopyable.h"
 #include "fsm/fsmtype.h"
@@ -16,7 +17,7 @@ class ITransition : public NonCopyableForAll {
      virtual ~ITransition() {}
 
      virtual bool IsMatch(const EventSharedPtr& event,
-                 const MachineBase& machine) = 0;
+                 const MachineBaseSharedPtr& machine) = 0;
      virtual bool IsValid() const = 0;
      virtual const std::string& GetName() const = 0;
 };
@@ -69,7 +70,8 @@ class Transition : public ITransition,
         return pred_ && is_valid_;
     }
 
-    virtual bool IsMatch(const EventSharedPtr& event, const MachineBase& machine);
+    virtual bool IsMatch(const EventSharedPtr& event,
+                const MachineBaseSharedPtr& machine);
     virtual const std::string& GetName() const {
         return name_;
     }
@@ -101,12 +103,12 @@ class Transition : public ITransition,
 };
 //-------------------------------------------------------------------
 class NonTransitiveAction : public ITransition,
-    public std::enable_shared_from_this<Transition> {
+    public std::enable_shared_from_this<NonTransitiveAction> {
    friend class ActionMachine;
 
  public:
    static NonTransitiveActionSharedPtr MakeNonTransitiveAction(const char* name,
-               ActionMachine& ownerMachine, 
+               ActionMachine& owner_machine, 
                IPredicateSharedPtr pred);
 
  public:
@@ -114,15 +116,15 @@ class NonTransitiveAction : public ITransition,
 
  private:
    NonTransitiveAction(const char* name,
-               ActionMachine& ownerMachine, 
-               IPredicateSharedPtr&& pred);
+               IPredicateSharedPtr pred);
 
  public:
    virtual bool IsValid() const {
        return static_cast<bool>(pred_);
    }
 
-   virtual bool IsMatch(const EventSharedPtr& event, const MachineBase& machine);
+   virtual bool IsMatch(const EventSharedPtr& event,
+               const MachineBaseSharedPtr& machine);
 
    virtual const std::string& GetName() const { return name_; }
 
@@ -132,7 +134,7 @@ class NonTransitiveAction : public ITransition,
    ActionFireType OnAction;
 
  private:
-   void init(ActionMachine& ownerMachine);
+   void Init(ActionMachine& ownerMachine);
 
  private:
    std::string name_;

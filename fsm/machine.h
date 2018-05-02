@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "fsm/machine_type.h"
+#include "fsm/fsmtype.h"
 #include "log/externallogger.h"
 
 namespace kuafu {

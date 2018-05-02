@@ -5,18 +5,21 @@
 #include <set>
 #include <memory>
 #include <thread>
+#include <functional>
+#include <iostream>
 
 #include "util/fifo.h"
 #include "log/externallogger.h"
 #include "fsm/fsmtype.h"
 
 namespace kuafu {
+
 class MachineSetHandler;
 class MachineBase;
 class MachineType;
 class Event;
 
-class MachineSet : public ExternalLogger
+class MachineSet : public ExternalLogger,
     public std::enable_shared_from_this<MachineSet> {
  public:
      static MachineSetSharedPtr MakeMachineSet();
@@ -37,12 +40,15 @@ class MachineSet : public ExternalLogger
       void Process(EventSharedPtr event);
       void ProcessTimeoutMachine(MachineBaseSharedPtr machine);
       
-      MachineBaseSharedPtr GetMachine(const MachineType& type, const string& name);
+      MachineBaseSharedPtr GetMachine(const MachineType& type, const std::string& name);
       void UpdateTimeoutMahcine(MachineBaseSharedPtr machine, time_t timeout) ;
 
-      bool HasHandler() const { return mEventHandler; }
+      bool HasHandler() const {
+          return static_cast<bool>(event_handler_);
+      }
 
    public:
+      typedef std::function<void()> NotifyEvent;
       NotifyEvent OnProcessError;
 
    private:
@@ -66,7 +72,7 @@ class MachineSet : public ExternalLogger
       std::thread::id owner_thread_id_;
 };
 
-ostream& operator<<(ostream& strm, const MachineSet& ms);
+std::ostream& operator<<(std::ostream& strm, const MachineSet& ms);
 
 }  // namespace kuafu
 
