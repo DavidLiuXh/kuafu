@@ -25,10 +25,10 @@ class ITransition : public NonCopyableForAll {
 typedef std::shared_ptr<ITransition> ITransitionSharedPtr;
 
 typedef std::function<void(MachineBase&,
-            const StateSharedPtr&,
+            const StateSharedPtr& from_state,
             ITransitionSharedPtr,
             EventSharedPtr,
-            const StateSharedPtr&)> TransitionFireType;
+            const StateSharedPtr& to_state)> TransitionFireType;
  
 typedef std::function<void(MachineBase&, ITransitionSharedPtr, EventSharedPtr)> ActionFireType;
 //-------------------------------------------------------------------

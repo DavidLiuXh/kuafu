@@ -5,7 +5,8 @@ namespace kuafu {
 TimeoutEvent::TimeoutEvent(const MachineSetSharedPtr& machine_set,
             const MachineType& machine_type,
             const std::string& machine_name)
-:EventTemplate<TimeoutEventType>(machine_set)
+:EventTemplate<TimeoutEventType>(TimeoutEventType::TET_TIMEOUT,
+            machine_set)
 ,machine_type_(machine_type)
 ,machine_name_(machine_name) {
 }

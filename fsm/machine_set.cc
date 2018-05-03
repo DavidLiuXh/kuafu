@@ -36,12 +36,14 @@ void MachineSet::AddMachine(MachineBaseSharedPtr machine) {
                << "(" << machine->GetType().GetName() << ")");
 
    if (machine_set_.insert(machine).second) {
-      machine_list_.push_back(machine);
+       machine->Birth();
 
-      machine->debuglog_delegate = debuglog_delegate;
-      machine->infolog_delegate = infolog_delegate;
-      machine->warninglog_delegate = warninglog_delegate;
-      machine->errlog_delegate = errlog_delegate;
+       machine_list_.push_back(machine);
+
+       machine->debuglog_delegate = debuglog_delegate;
+       machine->infolog_delegate = infolog_delegate;
+       machine->warninglog_delegate = warninglog_delegate;
+       machine->errlog_delegate = errlog_delegate;
    }
 }
 

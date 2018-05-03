@@ -52,24 +52,28 @@ class EventTemplate : public Event {
  public:
   typedef EventType Type;
 
-  EventTemplate()
-      :Event(MachineSetSharedPtr()) {
+  EventTemplate(Type type)
+      :Event(MachineSetSharedPtr()),
+       type_(type) {
       }
 
-  EventTemplate(const MachineBaseWeakPtrVec& target_machines)
-      :Event(MachineSetSharedPtr()) {
+  EventTemplate(Type type, const MachineBaseWeakPtrVec& target_machines)
+      :Event(MachineSetSharedPtr()),
+       type_(type) {
           target_machines_ = std::move(target_machines);
       }
 
-  EventTemplate(const MachineBaseSharedPtr& target_machine)
-      :Event(MachineSetSharedPtr()) {
+  EventTemplate(Type type, const MachineBaseSharedPtr& target_machine)
+      :Event(MachineSetSharedPtr()),
+       type_(type) {
       if (target_machine) {
           target_machines_.emplace_back(target_machine);
       }
   }
 
-  EventTemplate(const MachineSetSharedPtr& machine_set)
-      :Event(machine_set) {
+  EventTemplate(Type type, const MachineSetSharedPtr& machine_set)
+      :Event(machine_set),
+       type_(type) {
       }
 
   virtual ~EventTemplate() {

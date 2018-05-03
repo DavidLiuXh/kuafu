@@ -11,9 +11,8 @@ namespace kuafu {
 
 class MachineBase : public ExternalLogger {
  public:
-   MachineBase(const MachineType& machine_type,
-      const std::string& name)
-      :type_(machine_type)
+   MachineBase(const std::string& name)
+      :type_(name)
       ,name_(name) {
    }
 
@@ -22,6 +21,7 @@ class MachineBase : public ExternalLogger {
  public:
    virtual bool Process(EventSharedPtr) = 0;
    virtual void SetTimeout(unsigned long long timeout_ms) = 0;
+   virtual void Birth() = 0; 
 
    virtual unsigned long long GetTimeout() const {
        return 0;
@@ -45,7 +45,7 @@ class MachineBase : public ExternalLogger {
    }
 
  protected:
-   const MachineType type_;
+   MachineType type_;
    std::string name_;
 };
 
@@ -54,8 +54,8 @@ class StateMachine : public MachineBase {
  public:
    friend class State;
  public:
-   StateMachine(const MachineType& type,
-               const std::string& name);
+   StateMachine(const std::string& name);
+
  public:
    virtual ~StateMachine(){}
 
@@ -103,9 +103,8 @@ class ActionMachine : public MachineBase {
    friend class NonTransitiveAction;
 
  public:
-   ActionMachine(const MachineType& type,
-      const std::string& name)
-      :MachineBase(type, name) {
+   ActionMachine(const std::string& name)
+      :MachineBase(name) {
    }
 
  public:

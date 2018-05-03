@@ -18,8 +18,9 @@ enum class MachineOperator {
 
 class MachineOperationEvent : public EventTemplate<MachineOperator> {
  public:
-     MachineOperationEvent(const MachineBaseSharedPtr& machine)
-         :machine_(machine) {
+     MachineOperationEvent(MachineOperator type, const MachineBaseSharedPtr& machine)
+         :EventTemplate<MachineOperator>(type)
+         ,machine_(machine) {
          }
      ~MachineOperationEvent() {
      }

@@ -10,9 +10,8 @@
 
 namespace kuafu {
 
-StateMachine::StateMachine(const MachineType& type,
-                           const std::string& name)
-                           :MachineBase(type, name),
+StateMachine::StateMachine(const std::string& name)
+                           :MachineBase(name),
                            timeout_ms_(0) {
 }
 
@@ -76,6 +75,18 @@ bool StateMachine::IsTimeout() const {
    }
 
    return rt;
+}
+
+bool StateMachine::Process(EventSharedPtr event) {
+    ExternalDebugLog("Process StateMachine name: " << GetName()
+                << "| Machine type:"
+                <<  GetType().GetName() << "| Current State: " << (current_state_ ? current_state_->GetName() : "nil"));
+
+   if (ProcessNormalStateTransition(event)) {
+      return true;
+   }
+
+   return ProcessMetaStateTransition(event);
 }
 
 bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {

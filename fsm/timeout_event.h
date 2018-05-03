@@ -14,6 +14,7 @@ class  MachineSet;
 class  MachineType;
 
 enum class TimeoutEventType {
+    TET_TIMEOUT,
 };
 
 class TimeoutEvent : public EventTemplate<TimeoutEventType> {

@@ -6,7 +6,6 @@
 namespace kuafu {
 
 StateSharedPtr State::MakeState(StateMachine& owner, const char* name, time_t time_ms) {
-    //StateSharedPtr state = std::make_shared<State>(owner, name, time_ms);
     StateSharedPtr state(new State(owner,
                     name,
                     time_ms));
@@ -18,7 +17,6 @@ StateSharedPtr State::MakeState(StateMachine& owner, const char* name, time_t ti
 }
 
 StateSharedPtr State::MakeState(StateMachine& owner, const State& copy) {
-    //StateSharedPtr state = std::make_shared<State>(owner, copy);
     StateSharedPtr state(new State(owner, copy));
     if (state) {
         owner.states_.push_back(state);
