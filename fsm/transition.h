@@ -17,7 +17,7 @@ class ITransition : public NonCopyableForAll {
      virtual ~ITransition() {}
 
      virtual bool IsMatch(const EventSharedPtr& event,
-                 const MachineBaseSharedPtr& machine) = 0;
+                 const MachineBase& machine) = 0;
      virtual bool IsValid() const = 0;
      virtual const std::string& GetName() const = 0;
 };
@@ -26,11 +26,11 @@ typedef std::shared_ptr<ITransition> ITransitionSharedPtr;
 
 typedef std::function<void(MachineBase&,
             const StateSharedPtr&,
-            ITransitionSharedPtr&,
+            ITransitionSharedPtr,
             EventSharedPtr,
             const StateSharedPtr&)> TransitionFireType;
  
-typedef std::function<void(MachineBase&, ITransitionSharedPtr&, EventSharedPtr)> ActionFireType;
+typedef std::function<void(MachineBase&, ITransitionSharedPtr, EventSharedPtr)> ActionFireType;
 //-------------------------------------------------------------------
 class Transition : public ITransition,
     public std::enable_shared_from_this<Transition> {
@@ -71,7 +71,7 @@ class Transition : public ITransition,
     }
 
     virtual bool IsMatch(const EventSharedPtr& event,
-                const MachineBaseSharedPtr& machine);
+                const MachineBase& machine);
     virtual const std::string& GetName() const {
         return name_;
     }
@@ -124,7 +124,7 @@ class NonTransitiveAction : public ITransition,
    }
 
    virtual bool IsMatch(const EventSharedPtr& event,
-               const MachineBaseSharedPtr& machine);
+               const MachineBase& machine);
 
    virtual const std::string& GetName() const { return name_; }
 

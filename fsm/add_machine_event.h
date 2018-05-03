@@ -3,7 +3,9 @@
 
 #include <sstream>
 
+#include "fsm/event.h"
 #include "fsm/fsmtype.h"
+#include "fsm/machine.h"
 
 namespace kuafu {
 
@@ -14,14 +16,9 @@ enum class MachineOperator {
     MO_REMOVE,
 };
 
-static const char* [] kMachineOperatorTag = {
-    "AddMachineEvent", //MO_ADD
-    "RemoveMachineEvent" //MO_REMOVE
-};
-
-class MachineOperationEvent : public Event<MachineOperator> {
+class MachineOperationEvent : public EventTemplate<MachineOperator> {
  public:
-     MachineOperationEvent(const MahcineBaseSharedPtr& machine)
+     MachineOperationEvent(const MachineBaseSharedPtr& machine)
          :machine_(machine) {
          }
      ~MachineOperationEvent() {
@@ -32,7 +29,7 @@ class MachineOperationEvent : public Event<MachineOperator> {
      }
 
      virtual std::ostream& ToStream(std::ostream& str) const {
-         str << static_cast<const char*>(kMachineOperatorTag[type_])
+         str << static_cast<const char*>(type_ == MachineOperator::MO_ADD ? "AddMachineEvent" : "RemoveMachineEvent")
              << static_cast<const char*>("[")
              << static_cast<const char*>(" ") << machine_->GetName()
              << static_cast<const char*>("]");
@@ -41,7 +38,7 @@ class MachineOperationEvent : public Event<MachineOperator> {
 
      virtual std::string ToString() const {
          std::stringstream str;
-         str << static_cast<const char*>(kMachineOperatorTag[type_])
+         str << static_cast<const char*>(type_ == MachineOperator::MO_ADD ? "AddMachineEvent" : "RemoveMachineEvent")
              << static_cast<const char*>("[")
              << static_cast<const char*>(" ") << machine_->GetName()
              << static_cast<const char*>("]");

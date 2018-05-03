@@ -3,17 +3,20 @@
 #include <cassert>
 #include <typeinfo>
 #include <sstream>
+#include <memory>
+#include <exception>
 
 #include "fsm/machineset_handler.h"
-
+#include "fsm/machine.h"
+#include "fsm/event.h"
 #include "fsm/add_machine_event.h"
 #include "fsm/timeout_event.h"
-#include "log/llOgger.h"
+#include "log/kflogger.h"
 
 namespace kuafu {
 
 MachineSetSharedPtr MachineSet::MakeMachineSet() {
-    return std::make_shared<MachineSet>();
+    return MachineSetSharedPtr(new MachineSet());
 }
 
 MachineSet::MachineSet()
@@ -29,7 +32,7 @@ void MachineSet::RegisterHandler(MachineSetHandlerSharedPtr handler) {
 }
 
 void MachineSet::AddMachine(MachineBaseSharedPtr machine) {
-   EDebugLog("Adding machine: " << machine->GetName()
+   ExternalDebugLog("Adding machine: " << machine->GetName()
                << "(" << machine->GetType().GetName() << ")");
 
    if (machine_set_.insert(machine).second) {
@@ -43,7 +46,7 @@ void MachineSet::AddMachine(MachineBaseSharedPtr machine) {
 }
 
 void MachineSet::RemoveMachine(MachineBaseSharedPtr machine) {
-   EDebugLog("Removing machine: " << machine->GetName()
+   ExternalDebugLog("Removing machine: " << machine->GetName()
                << "(" << machine->GetType().GetName() << ")");
 
    if (machine_set_.erase(machine)) {
@@ -51,14 +54,14 @@ void MachineSet::RemoveMachine(MachineBaseSharedPtr machine) {
          i != machine_list_.end(); ++i) {
          if (i->get() == machine.get()) {
              machine_list_.erase(i);
-             EDebugLog("Removing machine: " << machine->GetName() << " OK!");
+             ExternalDebugLog("Removing machine: " << machine->GetName() << " OK!");
              return;
          }
       }
    }
 }
 
-MachineBaseSharedPtr MachineSet::GetMachine(const MachineType& type, const string& name) {
+MachineBaseSharedPtr MachineSet::GetMachine(const MachineType& type, const std::string& name) {
     MachineBaseSharedPtr found = nullptr;
 
     for (auto i = machine_list_.begin(), e = machine_list_.end();
@@ -74,12 +77,12 @@ MachineBaseSharedPtr MachineSet::GetMachine(const MachineType& type, const strin
 }
 
 void MachineSet::Enqueue(EventSharedPtr event) {
-   EInfoLog("enqueue " << event->toString());
+   ExternalInfoLog("enqueue " << event->ToString());
 
-   event->machine_set_ = std::shared_from_this();
+   event->machine_set_ = shared_from_this();
    if (event_handler_ &&
-               event_handler->onEventEnqueue(event) == MachineSetHandler::HandleResult::MS_SKIP) {
-       EDebugLog("use machine set handler");
+               event_handler_->OnEventEnqueue(event) == MachineSetHandler::HandleResult::HR_SKIP) {
+       ExternalDebugLog("use machine set handler");
    } else {
        event_fifo_.Add(event);
    }
@@ -95,7 +98,8 @@ void MachineSet::Process() {
          i != e; ++i) {
          if ((*i)->IsTimeout()) {
             (*i)->SetTimeout(0);
-            std::shared_ptr<TimeoutEvent> timeout_event(std::shared_from_this(),
+            std::shared_ptr<TimeoutEvent> timeout_event = std::make_shared<TimeoutEvent>(
+                        shared_from_this(),
                         (*i)->GetType(),
                         (*i)->GetName());
             (*i)->Process(timeout_event);
@@ -105,17 +109,20 @@ void MachineSet::Process() {
 }
 
 bool MachineSet::ProcessTargetMachineEvent(const EventSharedPtr& event) {
-   bool handled = false;
+    bool handled = false;
 
-   for (auto i = event->target_machines_.begin(), e = event->target_machines_.end();
-      i != event->target_machines_.end(); ++i) {
-      auto found = machine_set_.find(*i);
-      if (found != machine_set_.end()) {
-         handled |= found->Process(event);
-      }
-   }
+    for (auto i = event->target_machines_.begin(), e = event->target_machines_.end();
+                i != e; ++i) {
+        auto machine = i->lock();
+        if (machine) {
+            auto found = machine_set_.find(machine);
+            if (found != machine_set_.end()) {
+                handled |= (*found)->Process(event);
+            }
+        }
+    }
 
-   return handled;
+    return handled;
 }
 
 bool MachineSet::ProcessNoTargetMachineEvent(const EventSharedPtr& event) {
@@ -131,19 +138,18 @@ bool MachineSet::ProcessNoTargetMachineEvent(const EventSharedPtr& event) {
 
 void MachineSet::Process(EventSharedPtr event) {
     try {
-        auto add_machine_event = std::dynamic_pointer_cast<AddMachineEvent>(event);
-        if (add_machine_evnet) {
-            AddMachine(add_machine_event->GetMachine());
-            return;
-        } else {
-            auto remove_machine_event = std::dynamic_pointer_cast<RemoveMachineEvent>(event);
-            if (remove_machine_event) {
-                RemoveMachine(remove_machine_event->GetMachine());
-                return;
+        auto operate_machine_event = std::dynamic_pointer_cast<MachineOperationEvent>(event);
+        if (operate_machine_event) {
+            if (MachineOperator::MO_ADD == operate_machine_event->GetType()) {
+                AddMachine(operate_machine_event->GetMachine());
+            } else if (MachineOperator::MO_REMOVE == operate_machine_event->GetType()) {
+                RemoveMachine(operate_machine_event->GetMachine());
             }
+
+            return;
         }
 
-        EInfoLog("Handling event: " << event->toString());
+        ExternalInfoLog("Handling event: " << event->ToString());
 
         bool handled = false;
 
@@ -154,13 +160,13 @@ void MachineSet::Process(EventSharedPtr event) {
         }
 
         if (!handled) {
-            EErrLog("Unhandled event: " << event->toString().c_str());
+            ExternalErrorLog("Unhandled event: " << event->ToString());
         }
-    } catch (exception& e) {
-        EErrLog(__FUNCTION__ << " | caught exception: " << e.what());
+    } catch (std::exception& e) {
+        ExternalErrorLog(__FUNCTION__ << " | caught exception: " << e.what());
         OnProcessError();
     } catch (...) {
-        EErrLog(__FUNCTION__ << " | caught unknown exception");
+        ExternalErrorLog(__FUNCTION__ << " | caught unknown exception");
         OnProcessError();
     }
 }
@@ -170,26 +176,27 @@ void MachineSet::ProcessTimeoutMachine(MachineBaseSharedPtr machine) {
    if (found != machine_set_.end()) {
       auto state_machine = std::dynamic_pointer_cast<StateMachine>(*found);
       if (state_machine) {
-          std::shared_ptr<TimeoutEvent> timeout_event(std::shared_from_this(),
+          std::shared_ptr<TimeoutEvent> timeout_event = std::make_shared<TimeoutEvent>(
+                      shared_from_this(),
                       state_machine->GetType(),
                       state_machine->GetName());
          state_machine->SetTimeout(0);
          try {
             state_machine->Process(timeout_event);
-         } catch (exception& e) {
-            EErrLog(__FUNCTION__ << " | caught exception: " << e.what());
+         } catch (std::exception& e) {
+            ExternalErrorLog(__FUNCTION__ << " | caught exception: " << e.what());
             OnProcessError();
          } catch (...) {
-            EErrLog(__FUNCTION__ << " | caught unknown exception");
+            ExternalErrorLog(__FUNCTION__ << " | caught unknown exception");
             OnProcessError();
          }
       }
    }
 }
 
-void MachineSet::UpdateTimeoutMahcine(MachineBaseSharedPtr machine, time_t seconds_ms) {
+void MachineSet::UpdateTimeoutMahcine(const MachineBase& machine, time_t seconds_ms) {
    if (event_handler_ && seconds_ms > 0) {
-      event_handler_->OnUpdateMachineTimeOut(this, machine, seconds_ms);
+      event_handler_->OnUpdateMachineTimeOut(shared_from_this(), machine, seconds_ms);
    }
 }
 
@@ -199,7 +206,7 @@ std::ostream& operator<<(std::ostream& strm, const MachineSet& ms) {
                i != e; ++i) {
       strm << (*i)->GetName()
           << static_cast<const char*>("(")
-          << (*i)->getType().getName()
+          << (*i)->GetType().GetName()
           << static_cast<const char*>("),");
    }
 

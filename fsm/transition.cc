@@ -81,7 +81,7 @@ void Transition::Init() {
 }
 
 bool Transition::IsMatch(const EventSharedPtr& event,
-                    const MachineBaseSharedPtr& machine) {
+                    const MachineBase& machine) {
     bool rt = false;
     if (pred_) {
         rt = (*pred_)(event, machine);
@@ -126,7 +126,7 @@ void NonTransitiveAction::Init(ActionMachine& owner_machine) {
 }
 
 bool NonTransitiveAction::IsMatch(const EventSharedPtr& event,
-                             const MachineBaseSharedPtr& machine) {
+                             const MachineBase& machine) {
     bool rt = false;
 
     if (pred_) {

@@ -2,6 +2,7 @@
 #define KUAFU_TIMEOUTEVENT_H_
 
 #include <sstream>
+#include <string>
 
 #include "fsm/event.h"
 #include "fsm/fsmtype.h"

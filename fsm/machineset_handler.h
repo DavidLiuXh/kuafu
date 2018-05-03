@@ -28,9 +28,9 @@ class MachineSetHandler {
                  const MachineBaseSharedPtr& machine);
 
  public:
-     virtual int OnEventEnqueue(const EventSharedPtr& event) = 0 ;
+     virtual HandleResult OnEventEnqueue(const EventSharedPtr& event) = 0 ;
      virtual int OnUpdateMachineTimeOut(const MachineSetSharedPtr& machine_set,
-                 const MachineBaseSharedPtr& machine,
+                 const MachineBase& machine,
                  time_t seconds) = 0;
 };
 

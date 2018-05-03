@@ -13,16 +13,33 @@ class MachineBase;
 class MachineSet;
 
 class Event {
- public:
-    virtual ~Event() {
-    }
+  friend class MachineSet;
+  friend class StateMachine;
+  friend class ActionMachine;
 
  public:
-  virtual std::ostream& ToStream(std::ostream& str) const = 0;
-  virtual std::string ToString() const = 0;
-  virtual const MachineSetSharedPtr GetMachineSet() const {
-      return nullptr;
+  Event(const MachineSetSharedPtr& machine_set)
+      :machine_set_(machine_set) {
+      }
+
+  virtual ~Event() {
   }
+
+ public:
+    virtual std::ostream& ToStream(std::ostream& str) const = 0;
+    virtual std::string ToString() const = 0;
+
+    virtual const MachineSetSharedPtr GetMachineSet() const {
+        return machine_set_.lock();
+    }
+
+    MachineSetSharedPtr GetMachineSet() {
+        return machine_set_.lock();
+    }
+
+ protected:
+    MachineSetWeakPtr machine_set_;
+    MachineBaseWeakPtrVec target_machines_;
 };
 
 template<class EventType,
@@ -32,41 +49,37 @@ class EventTemplate : public Event {
   friend class StateMachine;
   friend class ActionMachine;
 
-public:
+ public:
   typedef EventType Type;
 
-  EventTemplate(const MachineBaseWeakPtrVec& target_machines)
-      :target_machines_(std::move(target_machines)) {
+  EventTemplate()
+      :Event(MachineSetSharedPtr()) {
       }
 
-  EventTemplate(const MachineBaseSharedPtr& target_machine) {
+  EventTemplate(const MachineBaseWeakPtrVec& target_machines)
+      :Event(MachineSetSharedPtr()) {
+          target_machines_ = std::move(target_machines);
+      }
+
+  EventTemplate(const MachineBaseSharedPtr& target_machine)
+      :Event(MachineSetSharedPtr()) {
       if (target_machine) {
           target_machines_.emplace_back(target_machine);
       }
   }
 
   EventTemplate(const MachineSetSharedPtr& machine_set)
-      :machine_set_(machine_set) {
+      :Event(machine_set) {
       }
 
   virtual ~EventTemplate() {
-  }
-
-  const MachineSetSharedPtr GetMachineSet() const {
-      return machine_set_.lock();
-  }
-
-  MachineSetSharedPtr GetMachineSet() {
-      return machine_set_.lock();
   }
 
   Type GetType() const {
       return type_;
   }
 
-private:
-  MachineBaseWeakPtrVec target_machines_;
-  MachineSetWeakPtr machine_set_;
+protected:
   Type type_;
 };
 

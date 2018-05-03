@@ -53,7 +53,7 @@ class MachineBase : public ExternalLogger {
 class StateMachine : public MachineBase {
  public:
    friend class State;
- private:
+ public:
    StateMachine(const MachineType& type,
                const std::string& name);
  public:
@@ -109,7 +109,7 @@ class ActionMachine : public MachineBase {
    }
 
  public:
-   virtual bool Process(Event*);
+   virtual bool Process(EventSharedPtr);
 
  protected:
    typedef std::vector<NonTransitiveActionSharedPtr> ActionListType;

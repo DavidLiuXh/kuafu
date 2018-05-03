@@ -21,6 +21,7 @@ class Event;
 
 class MachineSet : public ExternalLogger,
     public std::enable_shared_from_this<MachineSet> {
+        friend std::ostream& operator<<(std::ostream& strm, const MachineSet& ms);
  public:
      static MachineSetSharedPtr MakeMachineSet();
 
@@ -41,7 +42,7 @@ class MachineSet : public ExternalLogger,
       void ProcessTimeoutMachine(MachineBaseSharedPtr machine);
       
       MachineBaseSharedPtr GetMachine(const MachineType& type, const std::string& name);
-      void UpdateTimeoutMahcine(MachineBaseSharedPtr machine, time_t timeout) ;
+      void UpdateTimeoutMahcine(const MachineBase& machine, time_t timeout) ;
 
       bool HasHandler() const {
           return static_cast<bool>(event_handler_);

@@ -13,7 +13,7 @@ class IPredicate {
      }
 
      virtual bool operator() (const EventSharedPtr&,
-                 const MachineBaseSharedPtr& machine) = 0;
+                 const MachineBase& machine) = 0;
 };
 
 template <typename EventType>
@@ -26,7 +26,7 @@ class SimplePredicate : public IPredicate {
      }
 
      virtual bool operator() (const EventSharedPtr& event,
-                 const MachineBaseSharedPtr& machine) {
+                 const MachineBase& machine) {
          auto levent = std::dynamic_pointer_cast<EventType>(event);
          return (levent && levent->GetType() == type_);
      }
