@@ -10,12 +10,11 @@ TimeoutPredicate::TimeoutPredicate(const MachineType& source_machine_type)
 }
 
 bool TimeoutPredicate::operator() (const EventSharedPtr& event,
-            const MachineBaseSharedPtr& machine) {
+            const MachineBase& machine) {
    auto tevent = std::dynamic_pointer_cast<TimeoutEvent>(event);
    return (tevent &&
-               source_machine_type_ == tevent->GetType() &&
-               machine &&
-               machine->GetName() == tevent->GetMachineName());
+               source_machine_type_ == tevent->GetMachineType() &&
+               machine.GetName() == tevent->GetMachineName());
 }
 
 } //namespace kuafu

@@ -23,7 +23,7 @@ class TimeoutEvent : public EventTemplate<TimeoutEventType> {
                  const MachineType& machine_type,
                  const std::string& machine_name);
 
-     const MachineType& GetType() const;
+     const MachineType& GetMachineType() const;
      const std::string& GetMachineName() const;
 
      virtual std::ostream& ToStream(std::ostream&) const;

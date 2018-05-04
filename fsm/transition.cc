@@ -70,7 +70,7 @@ Transition::~Transition() {
 void Transition::Init() {
     StateSharedPtr hold_from_state = hold_from_.lock(); 
     if (hold_from_state) {
-        auto transitions = hold_from_state->transitions_;
+        auto& transitions = hold_from_state->transitions_;
         if (std::find(transitions.begin(),
                             transitions.end(),
                             shared_from_this()) == transitions.end()) {

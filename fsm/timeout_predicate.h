@@ -11,7 +11,7 @@ class TimeoutPredicate : public IPredicate {
      TimeoutPredicate(const MachineType& source_achine_type);
 
      virtual bool operator() (const EventSharedPtr& event,
-                 const MachineBaseSharedPtr& machine);
+                 const MachineBase& machine);
 
  private:
      MachineType source_machine_type_;

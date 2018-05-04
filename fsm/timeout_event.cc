@@ -11,7 +11,7 @@ TimeoutEvent::TimeoutEvent(const MachineSetSharedPtr& machine_set,
 ,machine_name_(machine_name) {
 }
 
-const MachineType& TimeoutEvent::GetType() const {
+const MachineType& TimeoutEvent::GetMachineType() const {
   return machine_type_;
 }
 

@@ -114,7 +114,7 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
                         current_state_->OnExit(*this, current_state_);
                         ExternalDebugLog("Exited " << ss.str());
                     } catch (...) {
-                        //ExternalErrorLog("Caught exception " << ss.str();
+                        ExternalErrorLog("Caught exception " << ss.str());
                     }
 
                     ss.str("");
@@ -199,6 +199,9 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
 
                 return true;
                 }
+            } else {
+
+                        ExternalDebugLog("no match");
             }
         }
     }

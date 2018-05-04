@@ -36,10 +36,11 @@ void MachineSet::AddMachine(MachineBaseSharedPtr machine) {
                << "(" << machine->GetType().GetName() << ")");
 
    if (machine_set_.insert(machine).second) {
-       machine->Birth();
+       //machine->Birth();
 
        machine_list_.push_back(machine);
 
+       machine->level = level;
        machine->debuglog_delegate = debuglog_delegate;
        machine->infolog_delegate = infolog_delegate;
        machine->warninglog_delegate = warninglog_delegate;
@@ -119,6 +120,7 @@ bool MachineSet::ProcessTargetMachineEvent(const EventSharedPtr& event) {
         if (machine) {
             auto found = machine_set_.find(machine);
             if (found != machine_set_.end()) {
+                ExternalDebugLog(__FUNCTION__ << " | target machine found: " << (*found)->GetName());
                 handled |= (*found)->Process(event);
             }
         }
