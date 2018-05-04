@@ -115,6 +115,7 @@ int main(int argc, char* agrv[]) {
             WARNING_LOG(os.str());
         };
 
+        // start event process thread
         machine_set->StartBackground(500);
 
         //add foodmachine into machine set
@@ -207,7 +208,7 @@ int main(int argc, char* agrv[]) {
                             << to_state->GetName());
             };
 
-
+            // enqueue events
             machine_set->Enqueue(std::make_shared<kuafu::MachineOperationEvent>(
                             kuafu::MachineOperator::MO_ADD,
                             food_machine));
