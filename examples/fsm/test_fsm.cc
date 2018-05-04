@@ -1,4 +1,5 @@
 #include <string>
+#include <sstream>
 
 #include "log/kflogger.h"
 
@@ -8,6 +9,7 @@
 #include "fsm/state.h"
 #include "fsm/transition.h"
 #include "fsm/transition_predicate.h"
+#include "fsm/timeout_predicate.h"
 #include "fsm/machine.h"
 #include "fsm/machine_set.h"
 
@@ -21,17 +23,22 @@ enum class FoodEventType {
 
 class FoodEvent : public kuafu::EventTemplate<FoodEventType> {
     public:
-        FoodEvent(FoodEventType type)
-            :kuafu::EventTemplate<FoodEventType>(type) {
+        using underlying_type = std::underlying_type<FoodEventType>::type;
+
+        FoodEvent(FoodEventType type, const kuafu::MachineBaseSharedPtr& machine)
+            :kuafu::EventTemplate<FoodEventType>(type, machine) {
             }
 
         virtual std::ostream& ToStream(std::ostream& str) const {
-            return str << "";
+            return str << "FoodEvent | " << static_cast<underlying_type>(type_) << std::endl;
         }
 
         virtual std::string ToString() const {
-  
-            return "";
+            std::ostringstream os;
+            os << "FoodEvent | " << static_cast<underlying_type>(type_) << std::endl;
+            std::string str = os.str();
+            os.str("");
+            return str;
     }
 };
 
@@ -51,6 +58,7 @@ class FoodMachine : public kuafu::StateMachine {
         kuafu::TransitionSharedPtr loging_welcome_;
         kuafu::TransitionSharedPtr loging_startup_;
         kuafu::TransitionSharedPtr welcome_startup_;
+        kuafu::TransitionSharedPtr welcome_timeout_;
 };
 
 FoodMachine::FoodMachine(const std::string& name)
@@ -60,7 +68,7 @@ FoodMachine::FoodMachine(const std::string& name)
 void FoodMachine::Birth() {
     startup_ = kuafu::State::MakeState(*this, "startup");
     loging_ = kuafu::State::MakeState(*this, "loging");
-    welcome_ = kuafu::State::MakeState(*this, "welcom");
+    welcome_ = kuafu::State::MakeState(*this, "welcom", 5000);
 
     startup_loging_ = kuafu::Transition::MakeTransition("startup_loging",
                 startup_,
@@ -78,12 +86,12 @@ void FoodMachine::Birth() {
                 welcome_,
                 startup_,
                 std::make_shared<kuafu::SimplePredicate<FoodEvent>>(FoodEventType::FET_LOGOUT));
+    welcome_timeout_ = kuafu::Transition::MakeTransition("welcome_timeout",
+                welcome_,
+                welcome_,
+                std::make_shared<kuafu::TimeoutPredicate>(type_));
 }
 //----------------------------------------------------------
-void test(kuafu::MachineBase& machine,
-            const kuafu::StateSharedPtr& state) {
-    INFO_LOG("Enter startup" << state->GetName());
-}
 int main(int argc, char* agrv[]) {
     kuafu::Logger::init(kuafu::Logger::Level::LL_DEBUG_LOG,
                 nullptr,
@@ -107,38 +115,39 @@ int main(int argc, char* agrv[]) {
             WARNING_LOG(os.str());
         };
 
+
         //add foodmachine into machine set
         std::shared_ptr<FoodMachine> food_machine = std::make_shared<FoodMachine>("food_machine");
         if (food_machine) {
+            food_machine->Birth();
+            food_machine->SetStartState(food_machine->startup_);
+
             //set state's callback
-            food_machine->startup_->OnEnter = test; 
-            /*
-            [&](kuafu::MachineBase& machine,
+            food_machine->startup_->OnEnter = [&](kuafu::MachineBase& machine,
                         const kuafu::StateSharedPtr& state) {
-                INFO_LOG("Enter startup" << state->GetName());
+                INFO_LOG("Enter " << state->GetName());
             };
-            */
             food_machine->startup_->OnExit = [&](kuafu::MachineBase& machine,
                         const kuafu::StateSharedPtr& state) {
-                INFO_LOG("Exit startup" << state->GetName());
+                INFO_LOG("Exit " << state->GetName());
             };
 
             food_machine->loging_->OnEnter = [&](kuafu::MachineBase& machine,
                         const kuafu::StateSharedPtr& state) {
-                INFO_LOG("Enter loging" << state->GetName());
+                INFO_LOG("Enter " << state->GetName());
             };
             food_machine->loging_->OnExit = [&](kuafu::MachineBase& machine,
                         const kuafu::StateSharedPtr& state) {
-                INFO_LOG("Exit loging" << state->GetName());
+                INFO_LOG("Exit " << state->GetName());
             };
 
             food_machine->welcome_->OnEnter = [&](kuafu::MachineBase& machine,
                         const kuafu::StateSharedPtr& state) {
-                INFO_LOG("Enter welcome" << state->GetName());
+                INFO_LOG("Enter " << state->GetName());
             };
             food_machine->welcome_->OnExit = [&](kuafu::MachineBase& machine,
                         const kuafu::StateSharedPtr& state) {
-                INFO_LOG("Exit welcome" << state->GetName());
+                INFO_LOG("Exit " << state->GetName());
             };
 
             //set transtition's callback
@@ -150,7 +159,7 @@ int main(int argc, char* agrv[]) {
                 INFO_LOG(transition->GetName()
                             << " | "
                             << from_state->GetName()
-                            << " ->"
+                            << " -> "
                             << to_state->GetName());
             };
             food_machine->loging_welcome_->OnTransition = [&](kuafu::MachineBase&,
@@ -161,7 +170,7 @@ int main(int argc, char* agrv[]) {
                 INFO_LOG(transition->GetName()
                             << " | "
                             << from_state->GetName()
-                            << " ->"
+                            << " -> "
                             << to_state->GetName());
             };
             food_machine->loging_startup_->OnTransition = [&](kuafu::MachineBase&,
@@ -172,7 +181,7 @@ int main(int argc, char* agrv[]) {
                 INFO_LOG(transition->GetName()
                             << " | "
                             << from_state->GetName()
-                            << " ->"
+                            << " -> "
                             << to_state->GetName());
             };
             food_machine->welcome_startup_->OnTransition = [&](kuafu::MachineBase&,
@@ -183,24 +192,40 @@ int main(int argc, char* agrv[]) {
                 INFO_LOG(transition->GetName()
                             << " | "
                             << from_state->GetName()
-                            << " ->"
+                            << " -> "
                             << to_state->GetName());
             };
+            food_machine->welcome_timeout_->OnTransition = [&](kuafu::MachineBase&,
+                        const kuafu::StateSharedPtr& from_state,
+                        kuafu::ITransitionSharedPtr transition,
+                        kuafu::EventSharedPtr event,
+                        const kuafu::StateSharedPtr& to_state) {
+                INFO_LOG(transition->GetName()
+                            << " | "
+                            << from_state->GetName()
+                            << " -> "
+                            << to_state->GetName());
+            };
+
+            machine_set->StartBackground(500);
 
             machine_set->Enqueue(std::make_shared<kuafu::MachineOperationEvent>(
                             kuafu::MachineOperator::MO_ADD,
                             food_machine));
 
             machine_set->Enqueue(std::make_shared<FoodEvent>(
-                            FoodEventType::FET_LOGIN));
+                            FoodEventType::FET_LOGIN,
+                            food_machine));
             machine_set->Enqueue(std::make_shared<FoodEvent>(
-                            FoodEventType::FET_LOGIN_OK));
+                            FoodEventType::FET_LOGIN_OK,
+                            food_machine));
             machine_set->Enqueue(std::make_shared<FoodEvent>(
-                            FoodEventType::FET_LOGOUT));
-        machine_set->Process();
+                            FoodEventType::FET_LOGOUT,
+                            food_machine));
         }
-
     }
+
+    getchar();
 
     return 0;
 }

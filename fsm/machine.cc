@@ -188,9 +188,9 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
 
                     try {
                         current_state_->OnEnter(*this, current_state_);
-                        ExternalDebugLog("Exited Enter action: (" << type_.GetName().c_str()
+                        ExternalDebugLog("Exited Enter action: (" << type_.GetName()
                                     << " " << name_ << ") "
-                                    << to_status ? to_status->GetName() : "non_status");
+                                    << (to_status ? to_status->GetName() : "non_status"));
                     } catch (...) {
                         ExternalErrorLog("Caught exception at Enter action: (" << type_.GetName() << " "
                                     << name_ << ") " << current_state_->GetName());
@@ -200,8 +200,7 @@ bool StateMachine::ProcessNormalStateTransition(EventSharedPtr event) {
                 return true;
                 }
             } else {
-
-                        ExternalDebugLog("no match");
+                ExternalDebugLog("no match");
             }
         }
     }

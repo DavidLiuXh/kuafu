@@ -7,6 +7,7 @@
 #include <thread>
 #include <functional>
 #include <iostream>
+#include <atomic>
 
 #include "util/fifo.h"
 #include "log/externallogger.h"
@@ -37,6 +38,9 @@ class MachineSet : public ExternalLogger,
       // thread safe
       void Enqueue(EventSharedPtr event);
 
+      void StartBackground(int sleep_ms);
+      void StopBackground();
+
       void Process(); 
       void Process(EventSharedPtr event);
       void ProcessTimeoutMachine(MachineBaseSharedPtr machine);
@@ -58,6 +62,7 @@ class MachineSet : public ExternalLogger,
 
       bool ProcessTargetMachineEvent(const EventSharedPtr& event);
       bool ProcessNoTargetMachineEvent(const EventSharedPtr& event);
+      void InternalProcessTimeoutEvent();
 
    private:
       typedef std::vector<MachineBaseSharedPtr> MachinePtrList;
@@ -71,6 +76,9 @@ class MachineSet : public ExternalLogger,
       MachineSetHandlerSharedPtr event_handler_;
 
       std::thread::id owner_thread_id_;
+
+      std::atomic<bool> background_thread_stop_flag_;
+      std::unique_ptr<std::thread> background_thread_;
 };
 
 std::ostream& operator<<(std::ostream& strm, const MachineSet& ms);

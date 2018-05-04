@@ -5,6 +5,7 @@
 #include <sstream>
 #include <memory>
 #include <exception>
+#include <chrono>
 
 #include "fsm/machineset_handler.h"
 #include "fsm/machine.h"
@@ -20,11 +21,14 @@ MachineSetSharedPtr MachineSet::MakeMachineSet() {
 }
 
 MachineSet::MachineSet()
-:owner_thread_id_(std::this_thread::get_id()) {
+:owner_thread_id_(std::this_thread::get_id())
+,background_thread_stop_flag_(false){
 }
 
 MachineSet::~MachineSet() {
    event_fifo_.Clear();
+   
+   StopBackground();
 }
 
 void MachineSet::RegisterHandler(MachineSetHandlerSharedPtr handler) {
@@ -91,24 +95,28 @@ void MachineSet::Enqueue(EventSharedPtr event) {
    }
 }
 
+void MachineSet::InternalProcessTimeoutEvent() {
+    if (!event_handler_) {
+        for (auto i = machine_list_.begin(), e = machine_list_.end();
+                    i != e; ++i) {
+            if ((*i)->IsTimeout()) {
+                (*i)->SetTimeout(0);
+                std::shared_ptr<TimeoutEvent> timeout_event = std::make_shared<TimeoutEvent>(
+                            shared_from_this(),
+                            (*i)->GetType(),
+                            (*i)->GetName());
+                (*i)->Process(timeout_event);
+            }
+        }
+    }
+}
+
 void MachineSet::Process() {
    while (event_fifo_.MessageAvailable()) {
       Process(event_fifo_.GetNext());
    }
 
-   if (!event_handler_) {
-      for (auto i = machine_list_.begin(), e = machine_list_.end();
-         i != e; ++i) {
-         if ((*i)->IsTimeout()) {
-            (*i)->SetTimeout(0);
-            std::shared_ptr<TimeoutEvent> timeout_event = std::make_shared<TimeoutEvent>(
-                        shared_from_this(),
-                        (*i)->GetType(),
-                        (*i)->GetName());
-            (*i)->Process(timeout_event);
-         }
-      }
-   }
+   InternalProcessTimeoutEvent();
 }
 
 bool MachineSet::ProcessTargetMachineEvent(const EventSharedPtr& event) {
@@ -191,8 +199,7 @@ void MachineSet::ProcessTimeoutMachine(MachineBaseSharedPtr machine) {
             ExternalErrorLog(__FUNCTION__ << " | caught exception: " << e.what());
             OnProcessError();
          } catch (...) {
-            ExternalErrorLog(__FUNCTION__ << " | caught unknown exception");
-            OnProcessError();
+            ExternalErrorLog(__FUNCTION__ << " | caught unknown exception"); OnProcessError();
          }
       }
    }
@@ -202,6 +209,28 @@ void MachineSet::UpdateTimeoutMahcine(const MachineBase& machine, time_t seconds
    if (event_handler_ && seconds_ms > 0) {
       event_handler_->OnUpdateMachineTimeOut(shared_from_this(), machine, seconds_ms);
    }
+}
+
+void MachineSet::StartBackground(int sleep_ms) {
+    if (!background_thread_) {
+        background_thread_.reset(new std::thread([&]() {
+                        while (!background_thread_stop_flag_.load()) {
+                            EventSharedPtr event = event_fifo_.GetNext(sleep_ms);
+                            if (event) {
+                                Process(event);
+                            }
+                            InternalProcessTimeoutEvent();
+                        }
+                        }));
+    }
+}
+
+void MachineSet::StopBackground() {
+    if (background_thread_ &&
+                !background_thread_stop_flag_.load()) {
+        background_thread_stop_flag_.store(true);
+        background_thread_->join();
+    }
 }
 
 std::ostream& operator<<(std::ostream& strm, const MachineSet& ms) {
