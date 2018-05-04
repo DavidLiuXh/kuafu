@@ -115,11 +115,11 @@ int main(int argc, char* agrv[]) {
             WARNING_LOG(os.str());
         };
 
+        machine_set->StartBackground(500);
 
         //add foodmachine into machine set
-        std::shared_ptr<FoodMachine> food_machine = std::make_shared<FoodMachine>("food_machine");
+        std::shared_ptr<FoodMachine> food_machine = kuafu::MakeMachine<FoodMachine>("food_machine");
         if (food_machine) {
-            food_machine->Birth();
             food_machine->SetStartState(food_machine->startup_);
 
             //set state's callback
@@ -207,7 +207,6 @@ int main(int argc, char* agrv[]) {
                             << to_state->GetName());
             };
 
-            machine_set->StartBackground(500);
 
             machine_set->Enqueue(std::make_shared<kuafu::MachineOperationEvent>(
                             kuafu::MachineOperator::MO_ADD,

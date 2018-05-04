@@ -9,6 +9,16 @@
 
 namespace kuafu {
 
+template<typename M, typename... Args>
+std::shared_ptr<M> MakeMachine(Args&&... args) {
+    std::shared_ptr<M> machine = std::make_shared<M>(std::forward<Args>(args)...);
+    if (machine) {
+        machine->Birth();
+    }
+
+    return machine;
+}
+
 class MachineBase : public ExternalLogger {
  public:
    MachineBase(const std::string& name)
