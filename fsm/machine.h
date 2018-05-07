@@ -2,6 +2,7 @@
 #define KUAFU_MACHINE_H_
 
 #include <vector>
+#include <type_traits>
 
 #include "fsm/machine_type.h"
 #include "fsm/fsmtype.h"
@@ -10,8 +11,9 @@
 namespace kuafu {
 
 template<typename M, typename... Args>
-std::shared_ptr<M> MakeMachine(Args&&... args) {
-    std::shared_ptr<M> machine = std::make_shared<M>(std::forward<Args>(args)...);
+std::shared_ptr<typename std::decay<M>::type> MakeMachine(Args&&... args) {
+    using RealType = typename std::decay<M>::type;
+    std::shared_ptr<RealType> machine = std::make_shared<RealType>(std::forward<Args>(args)...);
     if (machine) {
         machine->Birth();
     }
