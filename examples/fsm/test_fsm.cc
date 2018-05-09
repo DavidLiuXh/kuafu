@@ -119,7 +119,7 @@ int main(int argc, char* agrv[]) {
         machine_set->StartBackground(500);
 
         //add foodmachine into machine set
-        std::shared_ptr<FoodMachine> food_machine = kuafu::MakeMachine<FoodMachine>("food_machine");
+        std::shared_ptr<FoodMachine> food_machine = kuafu::MakeStateMachine<FoodMachine>("food_machine");
         if (food_machine) {
             food_machine->SetStartState(food_machine->startup_);
 

@@ -83,7 +83,7 @@ class EventTemplate : public Event {
       return type_;
   }
 
-protected:
+ protected:
   Type type_;
 };
 

@@ -10,8 +10,10 @@
 
 namespace kuafu {
 
-template<typename M, typename... Args>
-std::shared_ptr<typename std::decay<M>::type> MakeMachine(Args&&... args) {
+class StateMachine;
+template<typename M, typename... Args,
+    class = typename std::enable_if<std::is_base_of<StateMachine, typename std::decay<M>::type>::value>::type>
+std::shared_ptr<typename std::decay<M>::type> MakeStateMachine(Args&&... args) {
     using RealType = typename std::decay<M>::type;
     std::shared_ptr<RealType> machine = std::make_shared<RealType>(std::forward<Args>(args)...);
     if (machine) {
