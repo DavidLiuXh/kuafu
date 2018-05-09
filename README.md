@@ -1,12 +1,12 @@
 This is a tool library for quickly building C++ programs.
 
-One. is currently version 0.1.1 and supports the following features:
+A. is currently version 0.1.1 and supports the following features:
 
      1. Use C++11 standard;
      2. On the basis of log4cplus has been further packaged to simplify the log function;
      3. To provide a simple universal finite state machine implementation;
 
-Two. Compile:
+B. Compile:
 
      Dependent library:
          1.1 c++11;
