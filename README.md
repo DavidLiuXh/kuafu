@@ -1,3 +1,4 @@
+[中文说明](https://github.com/DavidLiuXh/kuafu/blob/master/README.cn.md)
 This is a tool library for quickly building C++ programs.
 
 A. is currently version 0.1.1 and supports the following features:
