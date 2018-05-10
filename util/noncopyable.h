@@ -7,8 +7,8 @@ namespace kuafu {
  * disable copy and move constructor
  */
 class NonCopyableForAll {
- public:
-     NonCopyableForAll() {}
+ protected:
+     NonCopyableForAll() = default;
 
      NonCopyableForAll(const NonCopyableForAll&) = delete;
      NonCopyableForAll& operator=(const NonCopyableForAll&) = delete;
@@ -21,8 +21,8 @@ class NonCopyableForAll {
  * only disable copy constructor
  */
 class NonCopyableForCopy {
- public:
-     NonCopyableForCopy() {}
+ protected:
+     NonCopyableForCopy() = default;
 
      NonCopyableForCopy(const NonCopyableForCopy&) = delete;
      NonCopyableForCopy& operator=(const NonCopyableForCopy&) = delete;
@@ -30,7 +30,7 @@ class NonCopyableForCopy {
 
 class StaticUtilClass {
  private:
-     StaticUtilClass();
+     StaticUtilClass() = delete;
 
 };
 
