@@ -40,8 +40,6 @@ void MachineSet::AddMachine(MachineBaseSharedPtr machine) {
                << "(" << machine->GetType().GetName() << ")");
 
    if (machine_set_.insert(machine).second) {
-       //machine->Birth();
-
        machine_list_.push_back(machine);
 
        machine->level = level;
@@ -211,9 +209,9 @@ void MachineSet::UpdateTimeoutMahcine(const MachineBase& machine, time_t seconds
    }
 }
 
-void MachineSet::StartBackground(int sleep_ms) {
+void MachineSet::StartBackground(unsigned int sleep_ms) {
     if (!background_thread_) {
-        background_thread_.reset(new std::thread([&]() {
+        background_thread_.reset(new std::thread([&, sleep_ms]() {
                         while (!background_thread_stop_flag_.load()) {
                             EventSharedPtr event = event_fifo_.GetNext(sleep_ms);
                             if (event) {

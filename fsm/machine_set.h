@@ -38,7 +38,7 @@ class MachineSet : public ExternalLogger,
       // thread safe
       void Enqueue(EventSharedPtr event);
 
-      void StartBackground(int sleep_ms);
+      void StartBackground(unsigned int sleep_ms);
       void StopBackground();
 
       void Process(); 
@@ -71,7 +71,7 @@ class MachineSet : public ExternalLogger,
       MachinePtrList machine_list_;
       MachinePtrSet machine_set_;
 
-      Fifo<Event> event_fifo_;
+      Fifo<EventSharedPtr> event_fifo_;
 
       MachineSetHandlerSharedPtr event_handler_;
 
