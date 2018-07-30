@@ -47,11 +47,14 @@ void Logger::init(Logger::Level level,
     if (nullptr != fileAppender.get()) {
         fileAppender->setName(LOG4CPLUS_TEXT(kKuafuLoggerDefaultFileAppendername));
         // use std::auto_ptr to log4cplus::Appender::setLayout
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         std::auto_ptr<log4cplus::Layout> layout(new log4cplus::PatternLayout(
-                        pattern));
+                    pattern));
         if (nullptr != layout.get()) {
             fileAppender->setLayout(layout);
         }
+#pragma GCC diagnostic pop
 
         sLogger.addAppender(fileAppender);
     }
@@ -61,11 +64,14 @@ void Logger::init(Logger::Level level,
         if (nullptr != consoleAppender.get()) {
             consoleAppender->setName(LOG4CPLUS_TEXT(kKuafuLoggerDefaultConsoleAppendername));
             // use std::auto_ptr to log4cplus::Appender::setLayout
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
             std::auto_ptr<log4cplus::Layout> console_layout(new log4cplus::PatternLayout(
                             pattern));
             if (nullptr != console_layout.get()) {
                 consoleAppender->setLayout(console_layout);
             }
+#pragma GCC diagnostic pop
 
             sLogger.addAppender(consoleAppender);
         }
