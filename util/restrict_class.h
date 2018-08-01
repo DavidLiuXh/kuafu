@@ -1,5 +1,5 @@
-#ifndef KUAFU_NONCOPYABLE_H_
-#define KUAFU_NONCOPYABLE_H_
+#ifndef KUAFU_RESTRICT_H_
+#define KUAFU_RESTRICT_H_
 
 namespace kuafu {
 
@@ -9,6 +9,7 @@ namespace kuafu {
 class NonCopyableForAll {
  protected:
      NonCopyableForAll() = default;
+     ~NonCopyableForAll() = default;
 
      NonCopyableForAll(const NonCopyableForAll&) = delete;
      NonCopyableForAll& operator=(const NonCopyableForAll&) = delete;
@@ -23,6 +24,7 @@ class NonCopyableForAll {
 class NonCopyableForCopy {
  protected:
      NonCopyableForCopy() = default;
+     ~NonCopyableForCopy() = default;
 
      NonCopyableForCopy(const NonCopyableForCopy&) = delete;
      NonCopyableForCopy& operator=(const NonCopyableForCopy&) = delete;
@@ -31,9 +33,8 @@ class NonCopyableForCopy {
 class StaticUtilClass {
  private:
      StaticUtilClass() = delete;
-
 };
 
 } //namespace kuafu
 
-#endif//KUAFU_NONCOPYABLE_H_
+#endif//KUAFU_RESTRICT_H_

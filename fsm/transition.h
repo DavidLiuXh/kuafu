@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 
-#include "util/noncopyable.h"
+#include "util/restrict_class.h"
 #include "fsm/fsmtype.h"
 
 namespace kuafu {

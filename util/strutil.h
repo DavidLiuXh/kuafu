@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "util/noncopyable.h"
+#include "util/restrict_class.h"
 //------------------------------------------------------
 namespace kuafu {
 

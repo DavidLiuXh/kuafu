@@ -4,7 +4,7 @@
 #include <sys/time.h>
 #include <ctime>
 
-#include "noncopyable.h"
+#include "restrict_class.h"
 
 namespace kuafu {
 

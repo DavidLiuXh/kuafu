@@ -7,7 +7,7 @@
 #include <condition_variable>
 #include <chrono>
 
-#include "util/noncopyable.h"
+#include "util/restrict_class.h"
 
 namespace kuafu {
 
