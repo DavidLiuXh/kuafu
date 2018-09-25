@@ -36,6 +36,7 @@ SET(PROJECT_ALL_FILES
     ./log/kflogger.cc
     ./util/strutil.cc
     ./util/timeutil.cc
+    ./util/syserrmsg.cc
     ./fsm/event.cc
     ./fsm/timeout_event.cc
     ./fsm/timeout_predicate.cc
