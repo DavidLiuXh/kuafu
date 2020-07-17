@@ -2,6 +2,6 @@
 
 namespace kuafu {
 
-const std::string StrUtil::sEmpty = "";
+const std::string StrUtil::empty_ = "";
 
 }

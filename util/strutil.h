@@ -7,8 +7,7 @@
 //------------------------------------------------------
 namespace kuafu {
 
-class StrUtil : public NonCopyableForAll {
-
+class StrUtil : public StaticUtilClass {
  public:
      template<typename StringPtrType>
      static bool NullOrEmpty(StringPtrType strPtr) {
@@ -21,11 +20,11 @@ class StrUtil : public NonCopyableForAll {
      }
 
      static std::string SafeGetString(const char* data) {
-         return std::string(nullptr != data ? data : sEmpty);
+         return std::string(nullptr != data ? data : empty_);
      }
 
  public:
-     static const std::string sEmpty;
+     static const std::string empty_;
 
  private:
      StrUtil();
