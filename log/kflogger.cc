@@ -8,7 +8,7 @@
 #include <log4cplus/layout.h>
 
 #include "util/strutil.h"
-#include "util/likely.h"
+#include "util/kfpoxis.h"
 
 namespace kuafu {
 
@@ -36,11 +36,11 @@ void Logger::Init(Logger::Level level,
 
     static log4cplus::Logger kLogger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("__kuafu_logger__"));
 
-    if (unlikely(StrUtil::NullOrEmpty(file_name))) {
+    if (KF_UNLIKELY(StrUtil::NullOrEmpty(file_name))) {
         file_name = kKuafuLoggerDefaultFileName;
     }
 
-    if (unlikely(StrUtil::NullOrEmpty(pattern))) {
+    if (KF_UNLIKELY(StrUtil::NullOrEmpty(pattern))) {
         pattern = kKuafuLoggerDefaultPattern;
     }
 
