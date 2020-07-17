@@ -17,8 +17,15 @@ class Fifo : public NonCopyableForAll {
       Fifo();
       ~Fifo();
       
-      void Add(const T& msg);
-      void Add(T&& msg);
+
+      //TODO:check std::is_same<T, U>
+      template <class U>
+      void Add(U&& msg) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        fifo_.push_back(std::forward<U>(msg));
+        condition_.notify_one();
+      }
+
       T GetNext();
       T GetNext(unsigned int ms);
       void Clear();
@@ -27,7 +34,7 @@ class Fifo : public NonCopyableForAll {
       unsigned int Size() const;
 
    private:
-      typedef std::deque<T> FifoQueueType;
+      using FifoQueueType = std::deque<T>;
       FifoQueueType fifo_;
 
       mutable std::mutex mutex_;
@@ -36,7 +43,7 @@ class Fifo : public NonCopyableForAll {
 
 template <class T>
 Fifo<T>::Fifo()
-:fifo_() {
+  :fifo_() {
 }
 
 template <class T>
@@ -60,21 +67,7 @@ template <class T>
 void Fifo<T>::Clear() {
     std::lock_guard<std::mutex> lock(mutex_);
     FifoQueueType().swap(fifo_);
-    condition_.notify_one();
-}
-
-template <class T>
-void Fifo<T>::Add(const T& msg) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    fifo_.push_back(msg);
-    condition_.notify_one();
-}
-
-template <class T>
-void Fifo<T>::Add(T&& msg) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    fifo_.push_back(std::move(msg));
-    condition_.notify_one();
+    condition_.notify_all();
 }
 
 template <class T>
