@@ -8,13 +8,47 @@
 //------------------------------------------------
 namespace kuafu {
 
-#define TRACE_LOG(msg) LOG4CPLUS_TRACE(kuafu::Logger::instance(), msg) 
-#define INFO_LOG(msg) LOG4CPLUS_INFO(kuafu::Logger::instance(), msg) 
-#define DEBUG_LOG(msg) LOG4CPLUS_DEBUG(kuafu::Logger::instance(), msg)
-#define WARNING_LOG(msg) LOG4CPLUS_WARN(kuafu::Logger::instance(), msg) 
-#define ERR_LOG(msg) LOG4CPLUS_ERROR(kuafu::Logger::instance(), msg)
+#define TRACE_LOG(msg) \
+  do { \
+       log4cplus::Logger* logger = kuafu::Logger::Instance(); \
+       if (nullptr != logger) { \
+         LOG4CPLUS_TRACE(*logger, msg); \
+       } \
+  } while(0);
 
-class Logger: public NonCopyableForAll {
+#define INFO_LOG(msg) \
+  do { \
+       log4cplus::Logger* logger = kuafu::Logger::Instance(); \
+       if (nullptr != logger) { \
+         LOG4CPLUS_INFO(*logger, msg); \
+       } \
+  } while(0);
+
+#define DEBUG_LOG(msg) \
+  do { \
+       log4cplus::Logger* logger = kuafu::Logger::Instance(); \
+       if (nullptr != logger) { \
+         LOG4CPLUS_DEBUG(*logger, msg); \
+       } \
+  } while(0);
+
+#define WARNING_LOG(msg) \
+   do { \
+       log4cplus::Logger* logger = kuafu::Logger::Instance(); \
+       if (nullptr != logger) { \
+         LOG4CPLUS_WARN(*logger, msg); \
+       } \
+  } while(0);
+
+#define ERR_LOG(msg) \
+  do { \
+       log4cplus::Logger* logger = kuafu::Logger::Instance(); \
+       if (nullptr != logger) { \
+         LOG4CPLUS_ERROR(*logger, msg); \
+       } \
+  } while(0);
+
+class Logger: public StaticUtilClass {
  public:
      // log level according to log4cplus's loglevel
      enum class Level {
@@ -27,21 +61,25 @@ class Logger: public NonCopyableForAll {
      };
 
  public:
-     static void init(Level level,
+     static void Init(Level level,
                  const char* pattern,
                  const char* file_name,
                  bool output_console);
 
-      static void uninit() {
-         sLogger.shutdown();
+      static void Uninit() {
+        if (nullptr != logger_)  {
+          logger_->shutdown();
+        }
       }
 
-      static log4cplus::Logger& instance() {
-         return sLogger;
+      //It is forbidden to call this Instance function,
+      //it is only used by the macro (i.e INFO_LOG) defined above
+      static log4cplus::Logger* Instance() {
+         return logger_;
       }
 
  private:
-      static log4cplus::Logger sLogger;
+      static log4cplus::Logger* logger_;
 };
 
 }//namespace kuafu

@@ -7,8 +7,8 @@
 #include <log4cplus/consoleappender.h>
 #include <log4cplus/layout.h>
 
-#include <util/strutil.h>
-#include <util/likely.h>
+#include "util/strutil.h"
+#include "util/likely.h"
 
 namespace kuafu {
 
@@ -20,9 +20,9 @@ static constexpr const char* kKuafuLoggerDefaultConsoleAppendername = "__kuafu_l
 static std::atomic_flag sKuafuLoggerInitStart(false);
 static std::atomic<bool> sKuafuLoggerInitFinished(false);
 //---------------------------------------------
-log4cplus::Logger Logger::sLogger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("__kuafu_logger__"));
+log4cplus::Logger* Logger::logger_ = nullptr;
 
-void Logger::init(Logger::Level level,
+void Logger::Init(Logger::Level level,
                   const char* pattern,
                   const char* file_name,
                   bool output_console) {
@@ -34,6 +34,8 @@ void Logger::init(Logger::Level level,
         return;
     }
 
+    static log4cplus::Logger kLogger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("__kuafu_logger__"));
+
     if (unlikely(StrUtil::NullOrEmpty(file_name))) {
         file_name = kKuafuLoggerDefaultFileName;
     }
@@ -42,41 +44,47 @@ void Logger::init(Logger::Level level,
         pattern = kKuafuLoggerDefaultPattern;
     }
 
-    log4cplus::SharedAppenderPtr fileAppender(new log4cplus::RollingFileAppender(file_name));      
+    //init RollingFileAppender
+    log4cplus::SharedAppenderPtr fileAppender(
+        new log4cplus::RollingFileAppender(file_name));      
     if (nullptr != fileAppender.get()) {
         fileAppender->setName(LOG4CPLUS_TEXT(kKuafuLoggerDefaultFileAppendername));
         // use std::auto_ptr to log4cplus::Appender::setLayout
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-        std::auto_ptr<log4cplus::Layout> layout(new log4cplus::PatternLayout(
-                    pattern));
+        std::auto_ptr<log4cplus::Layout> layout(
+            new log4cplus::PatternLayout(pattern));
         if (nullptr != layout.get()) {
             fileAppender->setLayout(layout);
         }
 #pragma GCC diagnostic pop
 
-        sLogger.addAppender(fileAppender);
+        kLogger.addAppender(fileAppender);
     }
 
+    //init ConsoleAppender 
     if (output_console) {
-        log4cplus::SharedAppenderPtr consoleAppender(new log4cplus::ConsoleAppender());      
+        log4cplus::SharedAppenderPtr consoleAppender(
+            new log4cplus::ConsoleAppender());      
         if (nullptr != consoleAppender.get()) {
             consoleAppender->setName(LOG4CPLUS_TEXT(kKuafuLoggerDefaultConsoleAppendername));
             // use std::auto_ptr to log4cplus::Appender::setLayout
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-            std::auto_ptr<log4cplus::Layout> console_layout(new log4cplus::PatternLayout(
-                            pattern));
+            std::auto_ptr<log4cplus::Layout> console_layout(
+                new log4cplus::PatternLayout(pattern));
             if (nullptr != console_layout.get()) {
                 consoleAppender->setLayout(console_layout);
             }
 #pragma GCC diagnostic pop
 
-            sLogger.addAppender(consoleAppender);
+            kLogger.addAppender(consoleAppender);
         }
     }
 
-    sLogger.setLogLevel(log4cplus::LogLevel(static_cast<int>(level)));
+    kLogger.setLogLevel(log4cplus::LogLevel(static_cast<int>(level)));
+
+    logger_ = &kLogger;
 
     sKuafuLoggerInitFinished.store(true, std::memory_order_release);
 }

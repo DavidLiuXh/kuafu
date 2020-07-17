@@ -6,7 +6,7 @@
 #include "log/externallogger.h"
 
 void TestLog() {
-    kuafu::Logger::init(kuafu::Logger::Level::LL_DEBUG_LOG,
+    kuafu::Logger::Init(kuafu::Logger::Level::LL_DEBUG_LOG,
                 nullptr,
                 "./test_log.log",
                 false);
@@ -35,7 +35,7 @@ class MyLogger: public kuafu::ExternalLogger {
 };
 
 void TestLogForExternalLogger() {
-    kuafu::Logger::init(kuafu::Logger::Level::LL_DEBUG_LOG,
+    kuafu::Logger::Init(kuafu::Logger::Level::LL_DEBUG_LOG,
                 nullptr,
                 "./test_log.log",
                 false);
