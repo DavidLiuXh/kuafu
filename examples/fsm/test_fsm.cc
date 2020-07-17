@@ -93,7 +93,7 @@ void FoodMachine::Birth() {
 }
 //----------------------------------------------------------
 int main(int argc, char* agrv[]) {
-    kuafu::Logger::init(kuafu::Logger::Level::LL_DEBUG_LOG,
+    kuafu::Logger::Init(kuafu::Logger::Level::LL_DEBUG_LOG,
                 nullptr,
                 "./test_fsm.log",
                 false);
@@ -102,16 +102,16 @@ int main(int argc, char* agrv[]) {
     if (machine_set) {
         //set machine set and machine log
         machine_set->level = kuafu::ExternalLogger::Level::EL_DEBUG_LOG;
-        machine_set->infolog_delegate = [&](std::ostringstream&& os) {
+        machine_set->infolog_delegate = [](std::ostringstream& os) {
             INFO_LOG(os.str());
         };
-        machine_set->debuglog_delegate = [&](std::ostringstream&& os) {
+        machine_set->debuglog_delegate = [](std::ostringstream& os) {
             DEBUG_LOG(os.str());
         };
-        machine_set->errlog_delegate = [&](std::ostringstream&& os) {
+        machine_set->errlog_delegate = [](std::ostringstream& os) {
             ERR_LOG(os.str());
         };
-        machine_set->warninglog_delegate = [&](std::ostringstream&& os) {
+        machine_set->warninglog_delegate = [](std::ostringstream& os) {
             WARNING_LOG(os.str());
         };
 
