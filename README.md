@@ -12,7 +12,7 @@ B. Compile:
 
      Dependent library:
          1.1 c++11;
-         1.2 log4cplus;
+         1.2 log4cplus 1.2.x;
 
      Build:
          2.1 use cmake system;
