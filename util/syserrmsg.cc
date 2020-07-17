@@ -43,7 +43,7 @@ void safe_strerror_r(int err, char *buf, size_t len) {
 }//namespace detail
 
 std::string SafeSysErrMsgGetter::SafeGetSysErrMsg(int err) {
-  const int buffer_size = 256;
+  constexpr int buffer_size = 256;
   char buf[buffer_size];
   kuafu::detail::safe_strerror_r(err, buf, sizeof(buf));
   return std::string(buf);
