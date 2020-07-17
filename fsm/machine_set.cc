@@ -36,7 +36,7 @@ void MachineSet::RegisterHandler(MachineSetHandlerSharedPtr handler) {
 }
 
 void MachineSet::AddMachine(MachineBaseSharedPtr machine) {
-   ExternalDebugLog("Adding machine: " << machine->GetName()
+   ExtDebugLog("Adding machine: " << machine->GetName()
                << "(" << machine->GetType().GetName() << ")");
 
    if (machine_set_.insert(machine).second) {
@@ -51,7 +51,7 @@ void MachineSet::AddMachine(MachineBaseSharedPtr machine) {
 }
 
 void MachineSet::RemoveMachine(MachineBaseSharedPtr machine) {
-   ExternalDebugLog("Removing machine: " << machine->GetName()
+   ExtDebugLog("Removing machine: " << machine->GetName()
                << "(" << machine->GetType().GetName() << ")");
 
    if (machine_set_.erase(machine)) {
@@ -59,7 +59,7 @@ void MachineSet::RemoveMachine(MachineBaseSharedPtr machine) {
          i != machine_list_.end(); ++i) {
          if (i->get() == machine.get()) {
              machine_list_.erase(i);
-             ExternalDebugLog("Removing machine: " << machine->GetName() << " OK!");
+             ExtDebugLog("Removing machine: " << machine->GetName() << " OK!");
              return;
          }
       }
@@ -82,12 +82,12 @@ MachineBaseSharedPtr MachineSet::GetMachine(const MachineType& type, const std::
 }
 
 void MachineSet::Enqueue(EventSharedPtr event) {
-   ExternalInfoLog("enqueue " << event->ToString());
+   ExtInfoLog("enqueue " << event->ToString());
 
    event->machine_set_ = shared_from_this();
    if (event_handler_ &&
                event_handler_->OnEventEnqueue(event) == MachineSetHandler::HandleResult::HR_SKIP) {
-       ExternalDebugLog("use machine set handler");
+       ExtDebugLog("use machine set handler");
    } else {
        event_fifo_.Add(event);
    }
@@ -126,7 +126,7 @@ bool MachineSet::ProcessTargetMachineEvent(const EventSharedPtr& event) {
         if (machine) {
             auto found = machine_set_.find(machine);
             if (found != machine_set_.end()) {
-                ExternalDebugLog(__FUNCTION__ << " | target machine found: " << (*found)->GetName());
+                ExtDebugLog(__FUNCTION__ << " | target machine found: " << (*found)->GetName());
                 handled |= (*found)->Process(event);
             }
         }
@@ -159,7 +159,7 @@ void MachineSet::Process(EventSharedPtr event) {
             return;
         }
 
-        ExternalInfoLog("Handling event: " << event->ToString());
+        ExtInfoLog("Handling event: " << event->ToString());
 
         bool handled = false;
 
@@ -170,13 +170,13 @@ void MachineSet::Process(EventSharedPtr event) {
         }
 
         if (!handled) {
-            ExternalErrorLog("Unhandled event: " << event->ToString());
+            ExtErrorLog("Unhandled event: " << event->ToString());
         }
     } catch (std::exception& e) {
-        ExternalErrorLog(__FUNCTION__ << " | caught exception: " << e.what());
+        ExtErrorLog(__FUNCTION__ << " | caught exception: " << e.what());
         OnProcessError();
     } catch (...) {
-        ExternalErrorLog(__FUNCTION__ << " | caught unknown exception");
+        ExtErrorLog(__FUNCTION__ << " | caught unknown exception");
         OnProcessError();
     }
 }
@@ -194,10 +194,10 @@ void MachineSet::ProcessTimeoutMachine(MachineBaseSharedPtr machine) {
          try {
             state_machine->Process(timeout_event);
          } catch (std::exception& e) {
-            ExternalErrorLog(__FUNCTION__ << " | caught exception: " << e.what());
+            ExtErrorLog(__FUNCTION__ << " | caught exception: " << e.what());
             OnProcessError();
          } catch (...) {
-            ExternalErrorLog(__FUNCTION__ << " | caught unknown exception"); OnProcessError();
+            ExtErrorLog(__FUNCTION__ << " | caught unknown exception"); OnProcessError();
          }
       }
    }

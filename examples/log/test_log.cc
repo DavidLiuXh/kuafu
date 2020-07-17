@@ -27,10 +27,10 @@ void TestLogForMultiThread() {
 class MyLogger: public kuafu::ExternalLogger {
     public:
         void ShowMsg(const char* msg) {
-            ExternalInfoLog("hello world!" << " | " << " ---- ");
-            ExternalDebugLog("hello world!");
-            ExternalWarnLog("hello world!");
-            ExternalErrorLog("hello world!" << " | " << " ---- ");
+            ExtInfoLog("hello world!" << " | " << " ---- ");
+            ExtDebugLog("hello world!");
+            ExtWarnLog("hello world!");
+            ExtErrorLog("hello world!" << " | " << " ---- ");
         }
 };
 
@@ -43,16 +43,16 @@ void TestLogForExternalLogger() {
     MyLogger my_logger;
     my_logger.level = kuafu::ExternalLogger::Level::EL_WARNING_LOG;
    
-    my_logger.infolog_delegate = [&](std::ostringstream&& os) {
+    my_logger.infolog_delegate = [](std::ostringstream& os) {
         INFO_LOG(os.str());
     };
-    my_logger.debuglog_delegate = [&](std::ostringstream&& os) {
+    my_logger.debuglog_delegate = [](std::ostringstream& os) {
         DEBUG_LOG(os.str());
     };
-    my_logger.errlog_delegate = [&](std::ostringstream&& os) {
+    my_logger.errlog_delegate = [](std::ostringstream& os) {
         ERR_LOG(os.str());
     };
-    my_logger.warninglog_delegate = [&](std::ostringstream&& os) {
+    my_logger.warninglog_delegate = [](std::ostringstream& os) {
         WARNING_LOG(os.str());
     };
 
