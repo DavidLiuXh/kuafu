@@ -23,6 +23,14 @@ class StrUtil : public StaticUtilClass {
          return std::string(nullptr != data ? data : empty_);
      }
 
+     static bool StartsWith(const std::string& str, const std::string& sub_str) {
+       return str.find(sub_str) == 0 ? true : false;
+     }
+
+     static bool EndsWith(const std::string& str, const std::string& sub_str) {
+       return str.rfind(sub_str) == (str.length() - sub_str.length()) ? true : false;
+     }
+
  public:
      static const std::string empty_;
 
